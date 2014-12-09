@@ -231,7 +231,6 @@ public class AttachmentsPushTest extends ReplicationTestBase {
     }
 
     @Test
-    @Ignore
     public void pushAttachmentsTestMissingStub() throws Exception {
         // more complex test with attachments changing between revisions
         String attachmentName1 = "attachment_1.txt";
@@ -244,11 +243,13 @@ public class AttachmentsPushTest extends ReplicationTestBase {
         List<Attachment> atts1 = new ArrayList<Attachment>();
         atts1.add(att1);
         atts1.add(att2);
-        DocumentRevision rev1 = datastore.getDocument(id1);
-        DocumentRevision rev2 = null;
+        MutableDocumentRevision rev1 = datastore.getDocument(id1).mutableCopy();
+        BasicDocumentRevision rev2 = null;
         try {
             // set attachment
-            rev2 = datastore.updateAttachments(rev1, atts1);
+            rev1.attachments.put(attachmentName1, att1);
+            rev1.attachments.put(attachmentName2, att2);
+            rev2 = datastore.updateDocumentFromRevision(rev1);
         } catch (IOException ioe) {
             Assert.fail("IOException thrown: "+ioe);
         }
@@ -257,7 +258,9 @@ public class AttachmentsPushTest extends ReplicationTestBase {
         push();
 
         // remove attachment
-        DocumentRevision rev3 = datastore.removeAttachments(rev2, new String[]{attachmentName1});
+        MutableDocumentRevision rev2Mut = rev2.mutableCopy();
+        rev2Mut.attachments.remove(attachmentName1);
+        BasicDocumentRevision rev3 = datastore.updateDocumentFromRevision(rev2Mut);
 
         // change revpos
         this.database.execSQL(String.format("UPDATE attachments SET revpos=1 WHERE filename='%s'", attachmentName2));
