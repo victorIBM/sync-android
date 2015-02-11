@@ -7,10 +7,10 @@ $(boot2docker shellinit)
 
 #need to clone couchdb first...
 git clone git@github.com:apache/couchdb.git
-if $? -ne 0; then exit $?; fi
+if [ "$?" != "0" ]; then exit $?; fi
 #now clone my gist so docker can work, will need to contribute back when Jessie becomes stable
 git clone git@gist.github.com:/63fef01b95afe3c4095c.git
-if [$? -ne 0]; then exit $?; fi
+if [ "$?" != "0" ]; then exit $?; fi
 
 
 cd couchdb
@@ -19,18 +19,18 @@ cp ../63fef01b95afe3c4095c/Dockerfile ./Dockerfile
 
 docker build -t "couchdb-master" .
 
-if [$? -ne 0]; then exit $?; fi
+if [ "$?" != "0" ]; then exit $?; fi
 
 cd ..
 
 container=$(docker run -p 15984:15984 -d couchdb-master)
 
-if [$? -ne 0]; then exit $?; fi
+if [ "$?" != "0" ]; then exit $?; fi
 
 #tests can be run against couch 2-0 when its done
 ./gradlew clean check integrationTest -Dtest.couch.host=$(boot2docker ip) -Dtest.with.specified.couch=true -Dtest.couch.port=15984 #will need to capture exit code
 
-build = $?
+build=$?
 
 #then you tear down everything
 docker stop $container
