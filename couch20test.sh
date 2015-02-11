@@ -39,4 +39,5 @@ docker rmi "couchdb-master"
 
 #delete clone
 rm -rf couchdb
+rm -rf 63fef01b95afe3c4095c
 exit $build
