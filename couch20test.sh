@@ -4,6 +4,10 @@ PATH=$PATH:/usr/local/bin/
 #get the docker env info
 $(boot2docker shellinit)
 
+#lets just echo the shell variables since this is always failing
+echo $DOCKER_HOST
+echo $DOCKER_CERT_PATH
+echo $DOCKER_TLS_VERIFY
 
 #need to clone couchdb first...
 git clone git@github.com:apache/couchdb.git
