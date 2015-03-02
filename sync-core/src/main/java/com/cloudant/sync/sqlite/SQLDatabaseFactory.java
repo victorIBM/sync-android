@@ -134,7 +134,6 @@ public class SQLDatabaseFactory {
      */
     public static SQLDatabase openSqlDatabase(String dbFilename, KeyProvider provider) throws IOException {
         makeSureFileExists(dbFilename);
-
         if(Misc.isRunningOnAndroid()) {
             try {
                 //Load class to open SQLCipher-based database

@@ -24,6 +24,7 @@ package com.cloudant.sync.sqlite.android;
  */
 
 import com.cloudant.android.encryption.KeyProvider;
+
 import com.cloudant.sync.sqlite.ContentValues;
 import com.cloudant.sync.sqlite.Cursor;
 import com.cloudant.sync.sqlite.SQLDatabase;
@@ -79,7 +80,6 @@ public class AndroidSQLCipherSQLite extends SQLDatabase {
         };
     }
 
-
     @Override
     public void compactDatabase() {
         database.execSQL("VACUUM");
@@ -132,12 +132,17 @@ public class AndroidSQLCipherSQLite extends SQLDatabase {
         this.database.execSQL(sql);
     }
 
+    //@Override
     public int status(int operation, boolean reset) {
         return 0;
     }
 
     //TODO: Change password option that will be implemented with key management work items
     public void changePassword(String password) throws SQLiteException {
+
+    }
+
+    public void changePassword(char[] password) throws SQLiteException {
 
     }
 
@@ -152,6 +157,7 @@ public class AndroidSQLCipherSQLite extends SQLDatabase {
     public int getVersion() {
         return this.database.getVersion();
     }
+
 
     @Override
     public int update(String table, ContentValues args, String whereClause, String[] whereArgs) {
@@ -172,7 +178,7 @@ public class AndroidSQLCipherSQLite extends SQLDatabase {
     public long insert(String table, ContentValues args) {
         return this.insertWithOnConflict(table, args, SQLiteDatabase.CONFLICT_NONE);
     }
-
+    
     @Override
     public long insertWithOnConflict(String table, ContentValues initialValues, int conflictAlgorithm) {
         //android DB will thrown an exception rather than return a -1 row id if there is a failure

@@ -169,8 +169,12 @@ public class DatastoreManager {
     }
 
     /**
+<<<<<<< HEAD
      * <p>Opens a datastore that requires SQLCipher encryption.
      * Key provider object contains the user defined SQLCipher key.</p>
+=======
+     * <p>Opens a datastore that requires SQLCipher encryption.</p>
+>>>>>>> Implement required passphrase for SQLCipher-based SQLite
      *
      * <p>This method finds the appropriate datastore file for a
      * datastore, then initialises a {@link Datastore} object connected
@@ -285,6 +289,7 @@ public class DatastoreManager {
 
             //Pass database directory, database name, and SQLCipher passphrase
             BasicDatastore ds = new BasicDatastore(dbDirectory, dbName, provider);
+
             if(!dbDirectoryExist) {
                 this.eventBus.post(new DatabaseCreated(dbName));
             }
