@@ -46,6 +46,21 @@ public class SQLDatabaseQueue {
     }
 
     /**
+     * Creates an SQLQueue for the SQLCipher-based database specified.
+     * @param filename The file where the database is located
+     * @throws IOException If an problem is encountered creating the DB
+     */
+    public SQLDatabaseQueue(String filename, String passphrase) throws IOException {
+        this.db = SQLDatabaseFactory.createSQLDatabase(filename, passphrase);
+        queue.submit(new Runnable() {
+            @Override
+            public void run() {
+                db.open();
+            }
+        });
+    }
+
+    /**
      * Updates the schema of the database.
      * @param schema The new Schmea for the database
      * @param version The version of the schema

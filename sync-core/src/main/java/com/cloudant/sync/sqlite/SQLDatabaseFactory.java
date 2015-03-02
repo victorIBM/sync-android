@@ -65,6 +65,41 @@ public class SQLDatabaseFactory {
     }
 
     /**
+     * SQLCipher-based implementation for creating database.
+     * @param dbFilename
+     * @param passphrase
+     * @return
+     * @throws IOException
+     */
+    public static SQLDatabase createSQLDatabase(String dbFilename, String passphrase) throws IOException {
+
+        makeSureFileExists(dbFilename);
+        if(Misc.isRunningOnAndroid()) {
+            try {
+                Class c = Class.forName("com.cloudant.sync.sqlite.android.AndroidSQLite");
+
+                Method m = c.getMethod("createAndroidSQLite",String.class);
+                return (SQLDatabase)m.invoke(null,dbFilename);
+
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Failed to load database module", e);
+                return null;
+            }
+        } else {
+            try {
+                Class c = Class.forName("com.cloudant.sync.sqlite.sqlite4java.SQLiteWrapper");
+                Method m = c.getMethod("openSQLiteWrapper", String.class);
+                return (SQLDatabase)m.invoke(null, dbFilename);
+
+            } catch (Exception e) {
+                logger.log(Level.SEVERE,"Failed to load database module",e);
+                return null;
+            }
+        }
+
+    }
+
+    /**
      * Return {@code SQLDatabase} for the given dbFilename
      *
      * @param dbFilename full file path of the db file
@@ -92,6 +127,40 @@ public class SQLDatabaseFactory {
                 logger.log(Level.SEVERE, "Failed to load database module", e);
                 return null;
             }
+        }
+    }
+
+    /**
+     * SQLCipher-based SQLite database implementation
+     * Return {@code SQLDatabase} for the given dbFilename
+     *
+     * @param dbFilename full file path of the db file
+     * @return {@code SQLDatabase} for the give filename
+     * @throws IOException if the file does not exists, and also
+     *         can not be created
+     */
+    public static SQLDatabase openSqlDatabase(String dbFilename, String passphrase) throws IOException {
+        makeSureFileExists(dbFilename);
+
+        if(Misc.isRunningOnAndroid()) {
+            try {
+                //First load required libraries using reflection
+                //Class libs = Class.forName("net.sqlcipher.database.SQLiteDatabase");
+                //Method mLoadLibs = libs.getMethod("loadLibs", Context.class);
+
+                //Load SQLCipher-based SQLite class to create datastore with sqlcipher
+                Class c = Class.forName("com.cloudant.sync.sqlite.android.AndroidSQLCipherSQLite");
+
+                //SQLCipher class method
+                Method m = c.getMethod("createAndroidSQLite", String.class, char[].class);
+                return (SQLDatabase)m.invoke(null, new Object[]{dbFilename, passphrase.toCharArray()});
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        } else {
+            //Currently, no implementation for Java SE
+            return null;
         }
     }
 
