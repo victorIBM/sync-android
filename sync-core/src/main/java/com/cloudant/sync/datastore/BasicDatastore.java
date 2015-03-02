@@ -119,6 +119,23 @@ class BasicDatastore implements Datastore, DatastoreExtended {
 
     }
 
+    public BasicDatastore(String dir, String name, String passphrase) throws SQLException, IOException {
+        Preconditions.checkNotNull(dir);
+        Preconditions.checkNotNull(name);
+
+        this.datastoreDir = dir;
+        this.datastoreName = name;
+        this.extensionsDir = FilenameUtils.concat(this.datastoreDir, "extensions");
+        final String dbFilename = FilenameUtils.concat(this.datastoreDir, DB_FILE_NAME);
+        queue = new SQLDatabaseQueue(dbFilename, passphrase);
+        queue.updateSchema(DatastoreConstants.getSchemaVersion3(), 3);
+        queue.updateSchema(DatastoreConstants.getSchemaVersion4(), 4);
+        queue.updateSchema(DatastoreConstants.getSchemaVersion5(), 5);
+        dbOpen = true;
+        this.eventBus = new EventBus();
+        this.attachmentManager = new AttachmentManager(this);
+    }
+
     @Override
     public String getDatastoreName() {
         Preconditions.checkState(this.isOpen(), "Database is closed");
