@@ -26,10 +26,8 @@ import org.junit.Before;
 public abstract class DatastoreTestBase {
 
     //System property for testing with SQLCipher-based SQLite database for Android
-    //public static final Boolean SQL_CIPHER_ENABLED = Boolean.valueOf(
-    //        System.getProperty("test.sqlcipher.passphrase",Boolean.FALSE.toString()));
-
-    public static final String SQL_CIPHER_ENABLED = System.getProperty("test.sqlcipher.passphrase");
+    public static final Boolean SQL_CIPHER_ENABLED = Boolean.valueOf(
+            System.getProperty("sqlcipher",Boolean.FALSE.toString()));
 
     String datastore_manager_dir;
     DatastoreManager datastoreManager;
@@ -40,7 +38,7 @@ public abstract class DatastoreTestBase {
         datastore_manager_dir = TestUtils.createTempTestingDir(this.getClass().getName());
         datastoreManager = new DatastoreManager(this.datastore_manager_dir);
 
-        if(SQL_CIPHER_ENABLED != null) {
+        if(SQL_CIPHER_ENABLED) {
             //Database name with SQLCipher enabled.  Need to have different database names if encryption is enabled.
             datastore = (BasicDatastore) (this.datastoreManager.openDatastore(getClass().getSimpleName(), "SQLCipherTest"));
         } else {
