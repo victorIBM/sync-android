@@ -16,12 +16,6 @@ package cloudant.com.sqlciphertest;
 import android.app.Activity;
 import android.os.Bundle;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
-import com.cloudant.sync.datastore.AttachmentException;
 import com.cloudant.sync.datastore.Datastore;
 import com.cloudant.sync.datastore.DatastoreManager;
 import com.cloudant.sync.datastore.DatastoreNotCreatedException;
@@ -31,6 +25,11 @@ import com.cloudant.sync.datastore.DocumentRevision;
 import com.cloudant.sync.datastore.MutableDocumentRevision;
 
 import org.json.JSONException;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MySQLCipherActivity extends Activity {
 
