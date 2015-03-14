@@ -43,7 +43,6 @@ import com.cloudant.sync.sqlite.SQLDatabaseFactory;
 import com.cloudant.sync.util.DatabaseUtils;
 
 import java.io.File;
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -117,6 +116,49 @@ public class IndexManager {
         }
         database = sqlDatabase;
     }
+
+
+    /**
+     *  Constructs a new IndexManager passing a key provider object
+     *  that contains methods to access the key for opening the SQLCipher datastore
+     *  which indexes documents in 'datastore'
+     */
+    public IndexManager(Datastore datastore, final KeyProvider provider) {
+        this.datastore = datastore;
+        validFieldName = Pattern.compile(INDEX_FIELD_NAME_PATTERN);
+        queue = Executors.newSingleThreadExecutor();
+        
+        final String filename = datastore.extensionDataFolder(EXTENSION_NAME) + File.separator
+        + "indexes.sqlite";
+        SQLDatabase sqlDatabase = null;
+        try {
+            sqlDatabase = queue.submit(new Callable<SQLDatabase>() {
+                @Override
+                public SQLDatabase call() throws Exception {
+                    SQLDatabase db = null;
+                    //Check that key is not empty
+                    if(!provider.getEncryptedKey().isEmpty()) {
+                        db = SQLDatabaseFactory.openSqlDatabase(filename, provider);
+                    } else {
+                        db = SQLDatabaseFactory.openSqlDatabase(filename);
+                    }
+                    String[] schemaIndex = { "CREATE TABLE " + INDEX_METADATA_TABLE_NAME + " ( "
+                        + "        index_name TEXT NOT NULL, "
+                        + "        index_type TEXT NOT NULL, "
+                        + "        field_name TEXT NOT NULL, "
+                        + "        last_sequence INTEGER NOT NULL);" };
+                    SQLDatabaseFactory.updateSchema(db, schemaIndex, VERSION);
+                    return db;
+                }
+            }).get();
+        } catch (InterruptedException e) {
+            logger.log(Level.SEVERE, "Problem opening or creating database.", e);
+        } catch (ExecutionException e) {
+            logger.log(Level.SEVERE, "Problem opening or creating database.", e);
+        }
+        database = sqlDatabase;
+    }
+
 
     public void close() {
         try {
