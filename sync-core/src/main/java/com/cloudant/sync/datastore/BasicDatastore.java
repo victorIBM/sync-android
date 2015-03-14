@@ -90,7 +90,7 @@ class BasicDatastore implements Datastore, DatastoreExtended {
 
     private static final String DB_FILE_NAME = "db.sync";
 
-    //Single thread executor to esnure only one tread accesses the db
+    //Single thread executor to ensure only one tread accesses the db
     private final SQLDatabaseQueue queue;
 
     private boolean dbOpen = false;
@@ -119,7 +119,15 @@ class BasicDatastore implements Datastore, DatastoreExtended {
 
     }
 
-    public BasicDatastore(String dir, String name, String passphrase) throws SQLException, IOException {
+    /**
+     * Constructor for single thread SQLCipher-based datastore.
+     * @param dir The directory where the datastore will be created
+     * @param name The user-defined name of the datastore
+     * @param provider The key provider object that contains the user-defined SQLCipher key
+     * @throws SQLException
+     * @throws IOException
+     */
+    public BasicDatastore(String dir, String name, KeyProvider provider) throws SQLException, IOException {
         Preconditions.checkNotNull(dir);
         Preconditions.checkNotNull(name);
 
@@ -127,7 +135,7 @@ class BasicDatastore implements Datastore, DatastoreExtended {
         this.datastoreName = name;
         this.extensionsDir = FilenameUtils.concat(this.datastoreDir, "extensions");
         final String dbFilename = FilenameUtils.concat(this.datastoreDir, DB_FILE_NAME);
-        queue = new SQLDatabaseQueue(dbFilename, passphrase);
+        queue = new SQLDatabaseQueue(dbFilename, provider);
         queue.updateSchema(DatastoreConstants.getSchemaVersion3(), 3);
         queue.updateSchema(DatastoreConstants.getSchemaVersion4(), 4);
         queue.updateSchema(DatastoreConstants.getSchemaVersion5(), 5);
