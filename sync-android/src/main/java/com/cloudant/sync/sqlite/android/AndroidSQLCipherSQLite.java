@@ -45,6 +45,14 @@ public class AndroidSQLCipherSQLite extends SQLDatabase {
         return new AndroidSQLCipherSQLite(db);
     }
 
+    public static AndroidSQLCipherSQLite openAndroidSQLite(String path, char[] passphrase) {
+
+        //Call SQLCipher-based method open database or create if database not found
+        SQLiteDatabase db = SQLiteDatabase.openDatabase(path, passphrase, null, SQLiteDatabase.OPEN_READWRITE);
+
+        return new AndroidSQLCipherSQLite(db);
+    }
+
     public AndroidSQLCipherSQLite(final SQLiteDatabase database) {
         this.database = database;
         this.threadWhichOpened = Thread.currentThread();
