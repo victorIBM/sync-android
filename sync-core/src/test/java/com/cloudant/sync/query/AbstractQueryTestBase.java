@@ -12,14 +12,11 @@
 
 package com.cloudant.sync.query;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-
 import com.cloudant.sync.datastore.DatastoreExtended;
 import com.cloudant.sync.datastore.DatastoreManager;
 import com.cloudant.sync.datastore.DocumentBodyFactory;
 import com.cloudant.sync.datastore.MutableDocumentRevision;
+import com.cloudant.android.encryption.HelperKeyProvider;
 import com.cloudant.sync.sqlite.SQLDatabase;
 import com.cloudant.sync.util.TestUtils;
 
@@ -29,6 +26,10 @@ import org.junit.Before;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 
 /**
  *  The purpose of this abstract class is to provide setup methods that include
@@ -54,7 +55,13 @@ public abstract class AbstractQueryTestBase {
         factory = new DatastoreManager(factoryPath);
         assertThat(factory, is(notNullValue()));
         String datastoreName = AbstractQueryTestBase.class.getSimpleName();
-        ds = (DatastoreExtended) factory.openDatastore(datastoreName);
+        //If SQLCipher parameter is enabled, run all tests with a SQLCipher-based datastore and passphrase
+        if(Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"))) {
+            //Open datastore with directory and helper class that provides a test key
+            ds = (DatastoreExtended) factory.openDatastore(datastoreName, new HelperKeyProvider());
+        } else {
+            ds = (DatastoreExtended) factory.openDatastore(datastoreName);
+        }
         assertThat(ds, is(notNullValue()));
     }
 

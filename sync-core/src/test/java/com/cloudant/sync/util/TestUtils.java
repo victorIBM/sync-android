@@ -14,7 +14,7 @@
 
 package com.cloudant.sync.util;
 
-import com.cloudant.sync.datastore.DatastoreExtended;
+import com.cloudant.android.encryption.HelperKeyProvider;
 import com.cloudant.sync.datastore.DocumentBody;
 import com.cloudant.sync.datastore.DocumentBodyFactory;
 import com.cloudant.sync.sqlite.SQLDatabase;
@@ -22,13 +22,11 @@ import com.cloudant.sync.sqlite.SQLDatabaseFactory;
 
 import org.apache.commons.io.FileUtils;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.sql.SQLData;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.sql.SQLException;
 import java.util.UUID;
 
@@ -45,9 +43,16 @@ public class TestUtils {
     public static SQLDatabase createEmptyDatabase(String database_dir, String database_file) throws IOException, SQLException {
         File dbFile = new File(database_dir + File.separator + database_file + DATABASE_FILE_EXT);
         FileUtils.touch(dbFile);
-        SQLDatabase database = SQLDatabaseFactory.openSqlDatabase(dbFile.getAbsolutePath());
+        SQLDatabase database = null;
+        //If SQLCipher parameter is enabled, run all tests with a SQLCipher-based datastore and passphrase
+        if(Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"))) {
+            database = SQLDatabaseFactory.openSqlDatabase(dbFile.getAbsolutePath(), new HelperKeyProvider());
+        } else {
+            database = SQLDatabaseFactory.openSqlDatabase(dbFile.getAbsolutePath());
+        }
         return database;
     }
+
 
     public static void deleteDatabaseQuietly(SQLDatabase database) {
         try {
@@ -156,7 +161,13 @@ public class TestUtils {
            String filePath = (String) db.getClass()
                    .getMethod("getDatabaseFile")
                    .invoke(db);
-           return SQLDatabaseFactory.openSqlDatabase(filePath);
+           SQLDatabase database = null;
+           //If SQLCipher parameter is enabled, run all tests with a SQLCipher-based datastore and passphrase
+           if(Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"))) {
+               return SQLDatabaseFactory.openSqlDatabase(filePath, new HelperKeyProvider());
+           } else {
+               return SQLDatabaseFactory.openSqlDatabase(filePath);
+           }
        } catch (IllegalAccessException e) {
            e.printStackTrace();
        } catch (InvocationTargetException e) {
