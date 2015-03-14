@@ -15,16 +15,16 @@
 package com.cloudant.sync.replication;
 
 import com.cloudant.common.CouchTestBase;
-import com.cloudant.common.RequireRunningCouchDB;
 import com.cloudant.mazha.CouchClient;
 import com.cloudant.mazha.CouchConfig;
 import com.cloudant.sync.datastore.DatastoreExtended;
 import com.cloudant.sync.datastore.DatastoreManager;
+import com.cloudant.android.encryption.HelperKeyProvider;
 import com.cloudant.sync.sqlite.SQLDatabase;
 import com.cloudant.sync.util.TestUtils;
+
 import org.junit.After;
 import org.junit.Before;
-import org.junit.experimental.categories.Category;
 
 import java.net.URISyntaxException;
 
@@ -59,7 +59,14 @@ public abstract class ReplicationTestBase extends CouchTestBase {
     private void createDatastore() throws Exception {
         datastoreManagerPath = TestUtils.createTempTestingDir(this.getClass().getName());
         datastoreManager = new DatastoreManager(this.datastoreManagerPath);
-        datastore = (DatastoreExtended) datastoreManager.openDatastore(getClass().getSimpleName());
+
+        //If SQLCipher parameter is enabled, run all tests with a SQLCipher-based datastore and passphrase
+        if(Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"))) {
+            //Open datastore with directory and helper class that provides a test key
+            datastore = (DatastoreExtended) datastoreManager.openDatastore(getClass().getSimpleName(), new HelperKeyProvider());
+        } else {
+            datastore = (DatastoreExtended) datastoreManager.openDatastore(getClass().getSimpleName());
+        }
         datastoreWrapper = new DatastoreWrapper(datastore);
     }
 

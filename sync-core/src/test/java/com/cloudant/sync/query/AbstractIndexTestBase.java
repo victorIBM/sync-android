@@ -12,18 +12,19 @@
 
 package com.cloudant.sync.query;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-
 import com.cloudant.sync.datastore.DatastoreExtended;
 import com.cloudant.sync.datastore.DatastoreManager;
+import com.cloudant.android.encryption.HelperKeyProvider;
 import com.cloudant.sync.sqlite.SQLDatabase;
 import com.cloudant.sync.util.SQLDatabaseTestUtils;
 import com.cloudant.sync.util.TestUtils;
 
 import org.junit.After;
 import org.junit.Before;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 
 public abstract class AbstractIndexTestBase {
 
@@ -39,7 +40,15 @@ public abstract class AbstractIndexTestBase {
         assertThat(factoryPath, is(notNullValue()));
         factory = new DatastoreManager(factoryPath);
         assertThat(factory, is(notNullValue()));
-        ds = (DatastoreExtended) factory.openDatastore(AbstractIndexTestBase.class.getSimpleName());
+
+        //If SQLCipher parameter is enabled, run all tests with a SQLCipher-based datastore and passphrase
+        if(Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"))) {
+            //Open datastore with directory and helper class that provides a test key
+            ds = (DatastoreExtended) factory.openDatastore(AbstractIndexTestBase.class.getSimpleName(), new HelperKeyProvider());
+        } else {
+            ds = (DatastoreExtended) factory.openDatastore(AbstractIndexTestBase.class.getSimpleName());
+        }
+
         assertThat(ds, is(notNullValue()));
         im = new IndexManager(ds);
         assertThat(im, is(notNullValue()));
