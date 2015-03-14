@@ -22,9 +22,7 @@ import com.google.common.base.Preconditions;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.sql.SQLData;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -86,15 +84,8 @@ public class SQLDatabaseFactory {
                 return null;
             }
         } else {
-            try {
-                Class c = Class.forName("com.cloudant.sync.sqlite.sqlite4java.SQLiteWrapper");
-                Method m = c.getMethod("openSQLiteWrapper", String.class);
-                return (SQLDatabase)m.invoke(null, dbFilename);
-
-            } catch (Exception e) {
-                logger.log(Level.SEVERE,"Failed to load database module",e);
-                return null;
-            }
+            //Currently, no implementation for Java SE
+            throw new IOException("No SQLCipher-based database implementation for Java SE");
         }
 
     }
@@ -144,10 +135,6 @@ public class SQLDatabaseFactory {
 
         if(Misc.isRunningOnAndroid()) {
             try {
-                //First load required libraries using reflection
-                //Class libs = Class.forName("net.sqlcipher.database.SQLiteDatabase");
-                //Method mLoadLibs = libs.getMethod("loadLibs", Context.class);
-
                 //Load SQLCipher-based SQLite class to create datastore with sqlcipher
                 Class c = Class.forName("com.cloudant.sync.sqlite.android.AndroidSQLCipherSQLite");
 
@@ -160,7 +147,7 @@ public class SQLDatabaseFactory {
             }
         } else {
             //Currently, no implementation for Java SE
-            return null;
+            throw new IOException("No SQLCipher-based database implementation for Java SE");
         }
     }
 
