@@ -136,7 +136,7 @@ public class SQLDatabaseFactory {
         makeSureFileExists(dbFilename);
         if(Misc.isRunningOnAndroid()) {
             try {
-                //Load class to open SQLCipher-based database
+                //Load class for opening SQLCipher-based database
                 Class c = Class.forName("com.cloudant.sync.sqlite.android.AndroidSQLCipherSQLite");
 
                 Method m = c.getMethod("openAndroidSQLite", String.class, KeyProvider.class);
