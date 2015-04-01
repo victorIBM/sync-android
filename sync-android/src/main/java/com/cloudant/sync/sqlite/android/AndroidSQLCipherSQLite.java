@@ -15,10 +15,15 @@
 package com.cloudant.sync.sqlite.android;
 
 /**
- * Extend SQLDatabase class with support for SQLCipher encrypted databases.
+ * Extend SQLDatabase class with support for SQLCipher.
+ * SQLCipher adds:
+ * - A user-based password (provided with the KeyProvider object) for encryption
+ * - Method to change password
+ *
  * Created by estebanmlaver on 2/19/15.
  */
 
+import com.cloudant.android.encryption.KeyProvider;
 import com.cloudant.sync.sqlite.ContentValues;
 import com.cloudant.sync.sqlite.Cursor;
 import com.cloudant.sync.sqlite.SQLDatabase;
@@ -35,20 +40,30 @@ public class AndroidSQLCipherSQLite extends SQLDatabase {
     private Thread threadWhichOpened = null;
     private ThreadLocal<Boolean> appearsOpen = null;
 
-    public static AndroidSQLCipherSQLite createAndroidSQLite(String path, char[] passphrase) {
-        //Load required libraries for SQL Cipher
-        //SQLiteDatabase.loadLibs(context);
+    /**
+     * Constructor for creating SQLCipher-based SQLite database.
+     * @param path full file path of the db file
+     * @param provider Encryption key object that contains the user-based password
+     * @return
+     */
+    public static AndroidSQLCipherSQLite createAndroidSQLite(String path, KeyProvider provider) {
 
-        //Call SQLCipher-based method open database or create if database not found
-        SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(path, passphrase, null);
+        //Call SQLCipher-based method for opening database, or creating if database not found
+        SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(path, provider.getEncryptedKey(), null);
 
         return new AndroidSQLCipherSQLite(db);
     }
 
-    public static AndroidSQLCipherSQLite openAndroidSQLite(String path, char[] passphrase) {
+    /**
+     * Constructor for opening SQLCipher-based SQLite database.
+     * @param path full file path of the db file
+     * @param provider Encryption key object that contains the user-based password
+     * @return
+     */
+    public static AndroidSQLCipherSQLite openAndroidSQLite(String path, KeyProvider provider) {
 
-        //Call SQLCipher-based method open database or create if database not found
-        SQLiteDatabase db = SQLiteDatabase.openDatabase(path, passphrase, null, SQLiteDatabase.OPEN_READWRITE);
+        //Call SQLCipher-based method open database
+        SQLiteDatabase db = SQLiteDatabase.openDatabase(path, provider.getEncryptedKey(), null, SQLiteDatabase.OPEN_READWRITE);
 
         return new AndroidSQLCipherSQLite(db);
     }
@@ -65,16 +80,15 @@ public class AndroidSQLCipherSQLite extends SQLDatabase {
     }
 
 
-    //@Override
+    @Override
     public void compactDatabase() {
         database.execSQL("VACUUM");
     }
 
-    //SQLCipher does not contain open() method
-    //@Override
-    //public void open() {
+    @Override
+    public void open() {
         // database should be already opened
-    //}
+    }
 
     @Override
     public void close() {
@@ -118,18 +132,12 @@ public class AndroidSQLCipherSQLite extends SQLDatabase {
         this.database.execSQL(sql);
     }
 
-    //@Override
     public int status(int operation, boolean reset) {
         return 0;
     }
 
-    //@Override
+    //TODO: Change password option that will be implemented with key management work items
     public void changePassword(String password) throws SQLiteException {
-
-    }
-
-    //@Override
-    public void changePassword(char[] password) throws SQLiteException {
 
     }
 
@@ -146,10 +154,6 @@ public class AndroidSQLCipherSQLite extends SQLDatabase {
     }
 
     @Override
-    public void open() {
-    }
-
-    //@Override
     public int update(String table, ContentValues args, String whereClause, String[] whereArgs) {
         return this.database.update(table, this.createAndroidContentValues(args), whereClause, whereArgs);
     }
@@ -159,24 +163,17 @@ public class AndroidSQLCipherSQLite extends SQLDatabase {
         return new AndroidSQLiteCursor(this.database.rawQuery(sql, values));
     }
 
-
-    //@Override
-    //public Cursor rawQuery(String sql, String[] selectionArgs) {
-        //return new AndroidSQLiteCursor(this.database.rawQuery(sql, selectionArgs));
-    //    return super.rawQuery(sql, selectionArgs);
-    //}
-
     @Override
     public int delete(String table, String whereClause, String[] whereArgs) {
         return this.database.delete(table, whereClause, whereArgs);
     }
 
-    //@Override
+    @Override
     public long insert(String table, ContentValues args) {
         return this.insertWithOnConflict(table, args, SQLiteDatabase.CONFLICT_NONE);
     }
 
-    //@Override
+    @Override
     public long insertWithOnConflict(String table, ContentValues initialValues, int conflictAlgorithm) {
         //android DB will thrown an exception rather than return a -1 row id if there is a failure
         // so we catch constraintException and return -1
