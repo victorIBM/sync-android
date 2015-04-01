@@ -120,10 +120,6 @@ public class BasicDatastore implements Datastore, DatastoreExtended {
 
     }
 
-<<<<<<< HEAD
-=======
-
->>>>>>> Classes that require SQLCiper key provider object
     /**
      * Constructor for single thread SQLCipher-based datastore.
      * @param dir The directory where the datastore will be created
@@ -1626,6 +1622,7 @@ public class BasicDatastore implements Datastore, DatastoreExtended {
                     // if it's MutableDocumentRev:
                     // - delete all except the sourceRevId and graft the new revision on later
 
+
                     // the revid to keep:
                     // - this will be the source rev id if it's a MutableDocumentRev
                     // - this will be rev id otherwise
@@ -1635,6 +1632,7 @@ public class BasicDatastore implements Datastore, DatastoreExtended {
                     } else {
                         revIdKeep = newWinner.getRevision();
                     }
+
 
                     for(BasicDocumentRevision revision : docTree.leafRevisions()) {
                         if(revision.getRevision().equals(revIdKeep)) {
