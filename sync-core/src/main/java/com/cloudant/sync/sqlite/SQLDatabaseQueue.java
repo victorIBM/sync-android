@@ -92,11 +92,11 @@ public class SQLDatabaseQueue {
     public int getVersion() throws SQLException {
         try {
             return queue.submit(new Callable<Integer>() {
-                 @Override
-                 public Integer call() throws Exception {
-                     return db.getVersion();
-                 }
-             }).get();
+                @Override
+                public Integer call() throws Exception {
+                    return db.getVersion();
+                }
+            }).get();
         } catch (InterruptedException e) {
             logger.log(Level.SEVERE,"Failed to get database version",e);
             throw new SQLException(e);

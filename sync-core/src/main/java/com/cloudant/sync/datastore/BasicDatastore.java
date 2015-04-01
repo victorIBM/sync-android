@@ -120,10 +120,6 @@ public class BasicDatastore implements Datastore, DatastoreExtended {
 
     }
 
-<<<<<<< HEAD
-=======
-
->>>>>>> Classes that require SQLCiper key provider object
     /**
      * Constructor for single thread SQLCipher-based datastore.
      * @param dir The directory where the datastore will be created
@@ -397,7 +393,7 @@ public class BasicDatastore implements Datastore, DatastoreExtended {
         } catch (InterruptedException e) {
             logger.log(Level.SEVERE, "Failed to get changes",e);
         } catch (ExecutionException e) {
-           logger.log(Level.SEVERE, "Failed to get changes",e);
+            logger.log(Level.SEVERE, "Failed to get changes",e);
             if(e.getCause()!= null){
                 if(e.getCause() instanceof IllegalStateException) {
                     throw (IllegalStateException) e.getCause();
@@ -551,7 +547,7 @@ public class BasicDatastore implements Datastore, DatastoreExtended {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } catch (ExecutionException e) {
-           throw new RuntimeException(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -577,7 +573,7 @@ public class BasicDatastore implements Datastore, DatastoreExtended {
                 }
             }
         } catch(SQLException sqe) {
-           throw new DatastoreException(sqe);
+            throw new DatastoreException(sqe);
         } finally {
             DatabaseUtils.closeCursorQuietly(c);
         }
@@ -785,7 +781,7 @@ public class BasicDatastore implements Datastore, DatastoreExtended {
             throw new DocumentNotFoundException(e);
         }
 
-         if (!revisionTree.leafRevisionIds().contains(prevRevId)) {
+        if (!revisionTree.leafRevisionIds().contains(prevRevId)) {
             throw new ConflictException("Document has newer revisions than the revision " +
                     "passed to delete; get the newest revision of the document and try again.");
         }
@@ -841,7 +837,7 @@ public class BasicDatastore implements Datastore, DatastoreExtended {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } catch (ExecutionException e) {
-           throw new DocumentNotFoundException(docId,null,e);
+            throw new DocumentNotFoundException(docId,null,e);
         }
 
     }
@@ -889,22 +885,22 @@ public class BasicDatastore implements Datastore, DatastoreExtended {
     private long insertRevision(SQLDatabase db,InsertRevisionOptions options) {
 
         long newSequence;
-            ContentValues args = new ContentValues();
-            args.put("doc_id", options.docNumericId);
-            args.put("revid", options.revId);
-            // parent field is a foreign key
-            if (options.parentSequence > 0) {
-                args.put("parent", options.parentSequence);
-            }
-            args.put("current", options.current);
-            args.put("deleted", options.deleted);
-            args.put("available", options.available);
-            args.put("json", options.data);
-            logger.fine("New revision inserted: " + options.docNumericId + ", " + options.revId);
-            newSequence = db.insert("revs", args);
-            if (newSequence < 0) {
-                throw new IllegalStateException("Unknown error inserting new updated doc, please check log");
-            }
+        ContentValues args = new ContentValues();
+        args.put("doc_id", options.docNumericId);
+        args.put("revid", options.revId);
+        // parent field is a foreign key
+        if (options.parentSequence > 0) {
+            args.put("parent", options.parentSequence);
+        }
+        args.put("current", options.current);
+        args.put("deleted", options.deleted);
+        args.put("available", options.available);
+        args.put("json", options.data);
+        logger.fine("New revision inserted: " + options.docNumericId + ", " + options.revId);
+        newSequence = db.insert("revs", args);
+        if (newSequence < 0) {
+            throw new IllegalStateException("Unknown error inserting new updated doc, please check log");
+        }
 
 
         return newSequence;
@@ -958,7 +954,7 @@ public class BasicDatastore implements Datastore, DatastoreExtended {
                 result.add(row);
             }
         } catch (SQLException e) {
-           throw new DatastoreException(e);
+            throw new DatastoreException(e);
         } finally {
             DatabaseUtils.closeCursorQuietly(cursor);
         }
@@ -1433,7 +1429,7 @@ public class BasicDatastore implements Datastore, DatastoreExtended {
                 }
             }).get();
         } catch (InterruptedException e) {
-           logger.log(Level.SEVERE,"Closing db failed",e);
+            logger.log(Level.SEVERE,"Closing db failed",e);
         } catch (ExecutionException e) {
             logger.log(Level.SEVERE, "Closing db failed", e);
         }
@@ -1510,8 +1506,8 @@ public class BasicDatastore implements Datastore, DatastoreExtended {
 
         final String sql = String.format(
                 "SELECT docs.docid, revs.revid FROM docs, revs " +
-                "WHERE docs.doc_id = revs.doc_id AND docs.docid IN (%s) AND revs.revid IN (%s) " +
-                "ORDER BY docs.docid",
+                        "WHERE docs.doc_id = revs.doc_id AND docs.docid IN (%s) AND revs.revid IN (%s) " +
+                        "ORDER BY docs.docid",
                 DatabaseUtils.makePlaceholders(revisions.keySet().size()),
                 DatabaseUtils.makePlaceholders(revisions.size()));
 
@@ -1530,7 +1526,7 @@ public class BasicDatastore implements Datastore, DatastoreExtended {
                 revisions.remove(docId, revId);
             }
         } catch (SQLException e) {
-           throw new DatastoreException(e);
+            throw new DatastoreException(e);
         } finally {
             DatabaseUtils.closeCursorQuietly(cursor);
         }
@@ -1621,49 +1617,49 @@ public class BasicDatastore implements Datastore, DatastoreExtended {
                                 newWinner.getAttachments() != null ? newWinner.getAttachments().values() : null);
                     }
 
-                        // if it's BasicDocumentRev:
-                        // - keep the winner, delete the rest
-                        // if it's MutableDocumentRev:
-                        // - delete all except the sourceRevId and graft the new revision on later
+                    // if it's BasicDocumentRev:
+                    // - keep the winner, delete the rest
+                    // if it's MutableDocumentRev:
+                    // - delete all except the sourceRevId and graft the new revision on later
 
-                        // the revid to keep:
-                        // - this will be the source rev id if it's a MutableDocumentRev
-                        // - this will be rev id otherwise
-                        String revIdKeep;
-                        if (newWinner.getClass() == MutableDocumentRevision.class) {
-                            revIdKeep = ((MutableDocumentRevision)newWinner).sourceRevisionId;
+                    // the revid to keep:
+                    // - this will be the source rev id if it's a MutableDocumentRev
+                    // - this will be rev id otherwise
+                    String revIdKeep;
+                    if (newWinner.getClass() == MutableDocumentRevision.class) {
+                        revIdKeep = ((MutableDocumentRevision)newWinner).sourceRevisionId;
+                    } else {
+                        revIdKeep = newWinner.getRevision();
+                    }
+
+                    for(BasicDocumentRevision revision : docTree.leafRevisions()) {
+                        if(revision.getRevision().equals(revIdKeep)) {
+                            // this is the one we want to keep, set it to current
+                            setCurrent(db, revision, true);
                         } else {
-                            revIdKeep = newWinner.getRevision();
-                        }
-
-                        for(BasicDocumentRevision revision : docTree.leafRevisions()) {
-                            if(revision.getRevision().equals(revIdKeep)) {
-                                // this is the one we want to keep, set it to current
-                                setCurrent(db, revision, true);
+                            if (revision.isDeleted()) {
+                                // if it is deleted, just make it non-current
+                                setCurrent(db, revision, false);
                             } else {
-                                if (revision.isDeleted()) {
-                                    // if it is deleted, just make it non-current
-                                    setCurrent(db, revision, false);
-                                } else {
-                                    // if it's not deleted, deleted and make it non-current
-                                    BasicDocumentRevision deleted = deleteDocumentInQueue(db,
-                                            revision.getId(), revision.getRevision());
-                                    setCurrent(db, deleted, false);
-                                }
+                                // if it's not deleted, deleted and make it non-current
+                                BasicDocumentRevision deleted = deleteDocumentInQueue(db,
+                                        revision.getId(), revision.getRevision());
+                                setCurrent(db, deleted, false);
                             }
                         }
+                    }
 
-                        // if it's MutableDocumentRev: graft the new revision on
-                        if (newWinner.getClass() == MutableDocumentRevision.class) {
-                            updateDocumentFromRevision(db,(MutableDocumentRevision) newWinner,
-                                    preparedAndSavedAttachments);
-                        }
+                    // if it's MutableDocumentRev: graft the new revision on
+                    if (newWinner.getClass() == MutableDocumentRevision.class) {
+                        updateDocumentFromRevision(db,(MutableDocumentRevision) newWinner,
+                                preparedAndSavedAttachments);
+                    }
 
                     return null;
                 }
             }).get();
         } catch (InterruptedException e) {
-           logger.log(Level.SEVERE, "Failed to resolve conflicts", e);
+            logger.log(Level.SEVERE, "Failed to resolve conflicts", e);
         } catch (ExecutionException e) {
             logger.log(Level.SEVERE, "Failed to resolve Conflicts",e);
             if(e.getCause() !=null){
@@ -1759,7 +1755,7 @@ public class BasicDatastore implements Datastore, DatastoreExtended {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } catch (ExecutionException e) {
-           throw new AttachmentException(e);
+            throw new AttachmentException(e);
         }
 
     }
@@ -1825,14 +1821,14 @@ public class BasicDatastore implements Datastore, DatastoreExtended {
             created = queue.submitTransaction(new SQLQueueCallable<BasicDocumentRevision>(){
                 @Override
                 public BasicDocumentRevision call(SQLDatabase db) throws Exception {
-                        // save document with body
-                        BasicDocumentRevision saved = createDocument(db,rev.docId, rev.body);
-                        // set attachments
-                        attachmentManager.setAttachments(db,saved, preparedAndSavedAttachments);
-                        // now re-fetch the revision with updated attachments
-                        BasicDocumentRevision updatedWithAttachments = getDocumentInQueue(db,
-                                saved.getId(), saved.getRevision());
-                        return updatedWithAttachments;
+                    // save document with body
+                    BasicDocumentRevision saved = createDocument(db,rev.docId, rev.body);
+                    // set attachments
+                    attachmentManager.setAttachments(db,saved, preparedAndSavedAttachments);
+                    // now re-fetch the revision with updated attachments
+                    BasicDocumentRevision updatedWithAttachments = getDocumentInQueue(db,
+                            saved.getId(), saved.getRevision());
+                    return updatedWithAttachments;
                 }
             }).get();
             return created;
@@ -1884,13 +1880,13 @@ public class BasicDatastore implements Datastore, DatastoreExtended {
             throws ConflictException, AttachmentNotSavedException, AttachmentException, DocumentNotFoundException, DatastoreException {
         Preconditions.checkNotNull(rev, "DocumentRevision can not be null");
 
-            // update document with new body
-            BasicDocumentRevision updated = updateDocument(db,rev.docId, rev.sourceRevisionId, rev.body, true, false);
-            // set attachments
-            this.attachmentManager.setAttachments(db,updated, preparedAndSavedAttachments);
-            // now re-fetch the revision with updated attachments
-            BasicDocumentRevision updatedWithAttachments = this.getDocumentInQueue(db, updated.getId(), updated.getRevision());
-            return updatedWithAttachments;
+        // update document with new body
+        BasicDocumentRevision updated = updateDocument(db,rev.docId, rev.sourceRevisionId, rev.body, true, false);
+        // set attachments
+        this.attachmentManager.setAttachments(db,updated, preparedAndSavedAttachments);
+        // now re-fetch the revision with updated attachments
+        BasicDocumentRevision updatedWithAttachments = this.getDocumentInQueue(db, updated.getId(), updated.getRevision());
+        return updatedWithAttachments;
     }
 
     @Override

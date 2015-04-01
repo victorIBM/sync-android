@@ -27,7 +27,7 @@ import org.junit.Before;
  * If the parameter 'test.sqlcipher.passphrase' is set to true, a SQLCipher-based SQLite database
  */
 public abstract class DatastoreTestBase {
-    
+
     String datastore_manager_dir;
     DatastoreManager datastoreManager;
     BasicDatastore datastore = null;
