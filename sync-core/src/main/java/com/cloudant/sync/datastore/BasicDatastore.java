@@ -18,6 +18,7 @@
 package com.cloudant.sync.datastore;
 
 import com.cloudant.android.Base64InputStreamFactory;
+import com.cloudant.android.encryption.KeyProvider;
 import com.cloudant.sync.notifications.DatabaseClosed;
 import com.cloudant.sync.notifications.DocumentCreated;
 import com.cloudant.sync.notifications.DocumentDeleted;
@@ -58,7 +59,7 @@ import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-class BasicDatastore implements Datastore, DatastoreExtended {
+public class BasicDatastore implements Datastore, DatastoreExtended {
 
     private static final String LOG_TAG = "BasicDatastore";
     private static final Logger logger = Logger.getLogger(BasicDatastore.class.getCanonicalName());
@@ -119,6 +120,10 @@ class BasicDatastore implements Datastore, DatastoreExtended {
 
     }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> Classes that require SQLCiper key provider object
     /**
      * Constructor for single thread SQLCipher-based datastore.
      * @param dir The directory where the datastore will be created
