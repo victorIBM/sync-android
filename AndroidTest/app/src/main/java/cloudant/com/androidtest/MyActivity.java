@@ -23,9 +23,7 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import net.sqlcipher.database.SQLiteDatabase;
 
 import org.junit.experimental.categories.Categories;
 import org.junit.runner.JUnitCore;
@@ -33,6 +31,10 @@ import org.junit.runner.Request;
 import org.junit.runner.Result;
 import org.junit.runner.manipulation.Filter;
 import org.junit.runner.notification.Failure;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.xml.transform.TransformerException;
 
@@ -48,6 +50,11 @@ public class MyActivity extends ListActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        //If sqlcipher testing parameter is 'true', load required library for SQLCipher datastore testing
+        if(Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"))) {
+            SQLiteDatabase.loadLibs(this);
+        }
+
         super.onCreate(savedInstanceState);
 
         setTestProperties();
@@ -71,15 +78,40 @@ public class MyActivity extends ListActivity {
                 core.addListener(listener);
 
                 ArrayList<Class> classes = new ArrayList<Class>();
-                for(Class c:BuildConfig.classToTests){
-                    classes.add(c);
+                for(Class c:BuildConfig.classToTests) {
+                    //Check parameter for specifying which test case package to run
+                    String testsToRun = String.valueOf(System.getProperty("test.run-packages"));
+                    if(!testsToRun.isEmpty()) {
+                        //If 'common' value is passed as a parameter, run test cases under package com.cloudant
+                        if (testsToRun.equals("common") && c.getPackage().toString().contains("common")) {
+                            classes.add(c);
+                        } else if (testsToRun.equals("mazha") && c.getPackage().toString().contains("mazha")) {
+                            classes.add(c);
+                        } else if (testsToRun.equals("datastore") && c.getPackage().toString().contains("datastore")) {
+                            classes.add(c);
+                        } else if (testsToRun.equals("indexing") && c.getPackage().toString().contains("indexing")) {
+                            classes.add(c);
+                        } else if (testsToRun.equals("query") && c.getPackage().toString().contains("query")) {
+                            classes.add(c);
+                        } else if (testsToRun.equals("replication") && c.getPackage().toString().contains("replication")) {
+                            classes.add(c);
+                        } else if (testsToRun.equals("sqlite") && c.getPackage().toString().contains("sqlite")) {
+                            classes.add(c);
+                        } else if (testsToRun.equals("util") && c.getPackage().toString().contains("util")) {
+                            classes.add(c);
+                        }
+                    } else {
+                        classes.add(c);
+                    }
                 }
+
 
                 // start with an empty filter and then add in our categories to be excluded
                 Filter filter = new Categories.CategoryFilter(null, null);
                 for(Class c : BuildConfig.testExcludes) {
                     filter = filter.intersect(new Categories.CategoryFilter(null, c));
                 }
+
                 // set up a request with our filter and our classes and run it
                 Request request = Request.classes(classes.toArray(new Class[classes.size()])).filterWith(filter);
                 final Result r = core.run(request);
@@ -162,7 +194,7 @@ public class MyActivity extends ListActivity {
         //set up dexcache this is a workaround for https://code.google.com/p/dexmaker/issues/detail?id=2
         System.setProperty( "dexmaker.dexcache", this.getCacheDir().getPath() );
 
-        for(String[] testOption : BuildConfig.TEST_CONFIG){
+        for(String[] testOption : BuildConfig.TEST_CONFIG) {
                 System.setProperty(testOption[0], testOption[1]);
         }
 
