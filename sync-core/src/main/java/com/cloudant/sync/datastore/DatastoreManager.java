@@ -170,11 +170,16 @@ public class DatastoreManager {
 
     /**
 <<<<<<< HEAD
+<<<<<<< HEAD
      * <p>Opens a datastore that requires SQLCipher encryption.
      * Key provider object contains the user defined SQLCipher key.</p>
 =======
      * <p>Opens a datastore that requires SQLCipher encryption.</p>
 >>>>>>> Implement required passphrase for SQLCipher-based SQLite
+=======
+     * <p>Opens a datastore that requires SQLCipher encryption.
+     * Key provider object contains the user defined SQLCipher key.</p>
+>>>>>>> Classes that require SQLCiper key provider object
      *
      * <p>This method finds the appropriate datastore file for a
      * datastore, then initialises a {@link Datastore} object connected

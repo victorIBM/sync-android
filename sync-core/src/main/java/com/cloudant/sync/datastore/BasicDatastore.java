@@ -120,6 +120,10 @@ public class BasicDatastore implements Datastore, DatastoreExtended {
 
     }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> Classes that require SQLCiper key provider object
     /**
      * Constructor for single thread SQLCipher-based datastore.
      * @param dir The directory where the datastore will be created
