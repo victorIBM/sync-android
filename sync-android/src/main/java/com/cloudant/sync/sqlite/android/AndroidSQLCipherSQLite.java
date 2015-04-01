@@ -69,14 +69,6 @@ public class AndroidSQLCipherSQLite extends SQLDatabase {
         return new AndroidSQLCipherSQLite(db);
     }
 
-    public static AndroidSQLCipherSQLite openAndroidSQLite(String path, char[] passphrase) {
-
-        //Call SQLCipher-based method open database or create if database not found
-        SQLiteDatabase db = SQLiteDatabase.openDatabase(path, passphrase, null, SQLiteDatabase.OPEN_READWRITE);
-
-        return new AndroidSQLCipherSQLite(db);
-    }
-
     public AndroidSQLCipherSQLite(final SQLiteDatabase database) {
         this.database = database;
         this.threadWhichOpened = Thread.currentThread();
@@ -140,7 +132,6 @@ public class AndroidSQLCipherSQLite extends SQLDatabase {
         this.database.execSQL(sql);
     }
 
-    //@Override
     public int status(int operation, boolean reset) {
         return 0;
     }
@@ -166,7 +157,6 @@ public class AndroidSQLCipherSQLite extends SQLDatabase {
         return this.database.getVersion();
     }
 
-
     @Override
     public int update(String table, ContentValues args, String whereClause, String[] whereArgs) {
         return this.database.update(table, this.createAndroidContentValues(args), whereClause, whereArgs);
@@ -186,7 +176,7 @@ public class AndroidSQLCipherSQLite extends SQLDatabase {
     public long insert(String table, ContentValues args) {
         return this.insertWithOnConflict(table, args, SQLiteDatabase.CONFLICT_NONE);
     }
-    
+
     @Override
     public long insertWithOnConflict(String table, ContentValues initialValues, int conflictAlgorithm) {
         //android DB will thrown an exception rather than return a -1 row id if there is a failure
