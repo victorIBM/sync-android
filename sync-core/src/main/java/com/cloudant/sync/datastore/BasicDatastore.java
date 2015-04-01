@@ -121,6 +121,7 @@ public class BasicDatastore implements Datastore, DatastoreExtended {
     }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
 >>>>>>> Classes that require SQLCiper key provider object
@@ -133,6 +134,9 @@ public class BasicDatastore implements Datastore, DatastoreExtended {
      * @throws IOException
      */
     public BasicDatastore(String dir, String name, KeyProvider provider) throws SQLException, IOException {
+=======
+    public BasicDatastore(String dir, String name, String passphrase) throws SQLException, IOException {
+>>>>>>> origin/43715-sqlcipher-support
         Preconditions.checkNotNull(dir);
         Preconditions.checkNotNull(name);
 
@@ -140,7 +144,11 @@ public class BasicDatastore implements Datastore, DatastoreExtended {
         this.datastoreName = name;
         this.extensionsDir = FilenameUtils.concat(this.datastoreDir, "extensions");
         final String dbFilename = FilenameUtils.concat(this.datastoreDir, DB_FILE_NAME);
+<<<<<<< HEAD
         queue = new SQLDatabaseQueue(dbFilename, provider);
+=======
+        queue = new SQLDatabaseQueue(dbFilename, passphrase);
+>>>>>>> origin/43715-sqlcipher-support
         queue.updateSchema(DatastoreConstants.getSchemaVersion3(), 3);
         queue.updateSchema(DatastoreConstants.getSchemaVersion4(), 4);
         queue.updateSchema(DatastoreConstants.getSchemaVersion5(), 5);

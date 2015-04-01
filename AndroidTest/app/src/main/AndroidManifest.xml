@@ -24,6 +24,7 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="cloudant.com.androidtest.MyActivity" />
         </activity>
+
     </application>
 
     <uses-permission android:name="android.permission.INTERNET" />
