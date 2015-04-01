@@ -17,6 +17,7 @@
 
 package com.cloudant.sync.sqlite;
 
+import com.cloudant.android.encryption.KeyProvider;
 import com.cloudant.sync.util.Misc;
 import com.google.common.base.Preconditions;
 
@@ -64,20 +65,22 @@ public class SQLDatabaseFactory {
 
     /**
      * SQLCipher-based implementation for creating database.
-     * @param dbFilename
-     * @param passphrase
-     * @return
-     * @throws IOException
+     * @param dbFilename full file path of the db file
+     * @param provider Key provider object storing the SQLCipher key
+     * @return {@code SQLDatabase} for the given filename
+     * @throws IOException if the file does not exists, and also
+     *         can not be created
      */
-    public static SQLDatabase createSQLDatabase(String dbFilename, String passphrase) throws IOException {
+    public static SQLDatabase createSQLDatabase(String dbFilename, KeyProvider provider) throws IOException {
 
         makeSureFileExists(dbFilename);
         if(Misc.isRunningOnAndroid()) {
             try {
-                Class c = Class.forName("com.cloudant.sync.sqlite.android.AndroidSQLite");
+                //Load class to create SQLCipher-based database
+                Class c = Class.forName("com.cloudant.sync.sqlite.android.AndroidSQLCipherSQLite");
 
-                Method m = c.getMethod("createAndroidSQLite",String.class);
-                return (SQLDatabase)m.invoke(null,dbFilename);
+                Method m = c.getMethod("createAndroidSQLite", String.class, KeyProvider.class);
+                return (SQLDatabase)m.invoke(null, new Object[]{dbFilename, provider});
 
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "Failed to load database module", e);
@@ -122,25 +125,24 @@ public class SQLDatabaseFactory {
     }
 
     /**
-     * SQLCipher-based SQLite database implementation
-     * Return {@code SQLDatabase} for the given dbFilename
-     *
+     * SQLCipher-based implementation for opening database.
      * @param dbFilename full file path of the db file
-     * @return {@code SQLDatabase} for the give filename
+     * @param provider Key provider object storing the SQLCipher key
+     * @return {@code SQLDatabase} for the given filename
      * @throws IOException if the file does not exists, and also
      *         can not be created
      */
-    public static SQLDatabase openSqlDatabase(String dbFilename, String passphrase) throws IOException {
+    public static SQLDatabase openSqlDatabase(String dbFilename, KeyProvider provider) throws IOException {
         makeSureFileExists(dbFilename);
 
         if(Misc.isRunningOnAndroid()) {
             try {
-                //Load SQLCipher-based SQLite class to create datastore with sqlcipher
+                //Load class to open SQLCipher-based database
                 Class c = Class.forName("com.cloudant.sync.sqlite.android.AndroidSQLCipherSQLite");
 
-                //SQLCipher class method
-                Method m = c.getMethod("createAndroidSQLite", String.class, char[].class);
-                return (SQLDatabase)m.invoke(null, new Object[]{dbFilename, passphrase.toCharArray()});
+                Method m = c.getMethod("openAndroidSQLite", String.class, KeyProvider.class);
+                return (SQLDatabase)m.invoke(null, new Object[]{dbFilename, provider});
+
             } catch (Exception e) {
                 e.printStackTrace();
                 return null;
