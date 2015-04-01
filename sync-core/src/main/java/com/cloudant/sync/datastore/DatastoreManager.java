@@ -139,7 +139,7 @@ public class DatastoreManager {
      * datastore, then initialises a {@link Datastore} object connected
      * to that underlying storage file.</p>
      *
-     * <p>If the datastore was successfully created and opened, a 
+     * <p>If the datastore was successfully created and opened, a
      * {@link com.cloudant.sync.notifications.DatabaseOpened DatabaseOpened}
      * event is posted on the event bus.</p>
      *
@@ -149,13 +149,13 @@ public class DatastoreManager {
      * @throws com.cloudant.sync.datastore.DatastoreNotCreatedException Thrown when
      * the datastore could not be created or opened.
      *
-     * @see DatastoreManager#getEventBus() 
+     * @see DatastoreManager#getEventBus()
      */
     public Datastore openDatastore(String dbName) throws DatastoreNotCreatedException {
         Preconditions.checkArgument(dbName.matches(LEGAL_CHARACTERS),
                 "A database must be named with all lowercase letters (a-z), digits (0-9),"
-                  + " or any of the _$()+-/ characters. The name has to start with a"
-                  + " lowercase letter (a-z).");
+                        + " or any of the _$()+-/ characters. The name has to start with a"
+                        + " lowercase letter (a-z).");
         if (!openedDatastores.containsKey(dbName)) {
             synchronized (openedDatastores) {
                 if (!openedDatastores.containsKey(dbName)) {
@@ -169,12 +169,8 @@ public class DatastoreManager {
     }
 
     /**
-<<<<<<< HEAD
      * <p>Opens a datastore that requires SQLCipher encryption.
      * Key provider object contains the user defined SQLCipher key.</p>
-=======
-     * <p>Opens a datastore that requires SQLCipher encryption.</p>
->>>>>>> origin/43715-sqlcipher-support
      *
      * <p>This method finds the appropriate datastore file for a
      * datastore, then initialises a {@link Datastore} object connected
@@ -189,11 +185,7 @@ public class DatastoreManager {
      *
      * @see DatastoreManager#getEventBus()
      */
-<<<<<<< HEAD
     public Datastore openDatastore(String dbName, KeyProvider provider) throws DatastoreNotCreatedException {
-=======
-    public Datastore openDatastore(String dbName, String passphrase) throws DatastoreNotCreatedException {
->>>>>>> origin/43715-sqlcipher-support
         Preconditions.checkArgument(dbName.matches(LEGAL_CHARACTERS),
                 "A database must be named with all lowercase letters (a-z), digits (0-9),"
                         + " or any of the _$()+-/ characters. The name has to start with a"
@@ -201,11 +193,7 @@ public class DatastoreManager {
         if (!openedDatastores.containsKey(dbName)) {
             synchronized (openedDatastores) {
                 if (!openedDatastores.containsKey(dbName)) {
-<<<<<<< HEAD
                     Datastore ds = createDatastore(dbName, provider);
-=======
-                    Datastore ds = createDatastore(dbName, passphrase);
->>>>>>> origin/43715-sqlcipher-support
                     ds.getEventBus().register(this);
                     openedDatastores.put(dbName, ds);
                 }
@@ -227,14 +215,14 @@ public class DatastoreManager {
      * deleting the data. Currently, no checks for open datastores are carried
      * out before attempting the delete.</p>
      *
-     * <p>If the datastore was successfully deleted, a 
-     * {@link com.cloudant.sync.notifications.DatabaseDeleted DatabaseDeleted} 
+     * <p>If the datastore was successfully deleted, a
+     * {@link com.cloudant.sync.notifications.DatabaseDeleted DatabaseDeleted}
      * event is posted on the event bus.</p>
      *
      * @throws IOException if the datastore doesn't exist on disk or there is
      *      a problem deleting the files.
      *
-     * @see DatastoreManager#getEventBus() 
+     * @see DatastoreManager#getEventBus()
      */
     public void deleteDatastore(String dbName) throws IOException {
         Preconditions.checkNotNull(dbName, "Datastore name must not be null");
@@ -249,7 +237,7 @@ public class DatastoreManager {
             if (!dir.exists()) {
                 String msg = String.format(
                         "Datastore %s doesn't exist on disk", dbName
-                        );
+                );
                 throw new IOException(msg);
             } else {
                 FileUtils.deleteDirectory(dir);
@@ -297,33 +285,6 @@ public class DatastoreManager {
 
             //Pass database directory, database name, and SQLCipher passphrase
             BasicDatastore ds = new BasicDatastore(dbDirectory, dbName, provider);
-            if(!dbDirectoryExist) {
-                this.eventBus.post(new DatabaseCreated(dbName));
-            }
-            eventBus.post(new DatabaseOpened(dbName));
-            return ds;
-        } catch (IOException e) {
-            throw new DatastoreNotCreatedException("Database not found: " + dbName, e);
-        } catch (SQLException e) {
-            throw new DatastoreNotCreatedException("Database not initialized correctly: " + dbName, e);
-        }
-    }
-
-    /**
-     * Creates a datastore that requires SQLCipher encryption.
-     */
-    private Datastore createDatastore(String dbName, String passphrase) throws DatastoreNotCreatedException {
-        try {
-            String dbDirectory = this.getDatastoreDirectory(dbName);
-            boolean dbDirectoryExist = new File(dbDirectory).exists();
-            logger.info("path: " + this.path);
-            logger.info("dbDirectory: " + dbDirectory);
-            logger.info("dbDirectoryExist: " + dbDirectoryExist);
-            // dbDirectory will created in BasicDatastore constructor
-            // if it does not exist
-
-            //Pass database directory, database name, and SQLCipher passphrase
-            BasicDatastore ds = new BasicDatastore(dbDirectory, dbName, passphrase);
             if(!dbDirectoryExist) {
                 this.eventBus.post(new DatabaseCreated(dbName));
             }

@@ -14,10 +14,7 @@
 
 package com.cloudant.sync.datastore;
 
-<<<<<<< HEAD
 import com.cloudant.android.encryption.HelperKeyProvider;
-=======
->>>>>>> origin/43715-sqlcipher-support
 import com.cloudant.sync.util.TestUtils;
 
 import org.junit.After;
@@ -32,14 +29,7 @@ import org.junit.Before;
 public abstract class DatastoreTestBase {
 
     //System property for testing with SQLCipher-based SQLite database for Android
-<<<<<<< HEAD
     private static final String SQL_CIPHER_ENABLED = System.getProperty("test.sqlcipher.passphrase");
-=======
-    //public static final Boolean SQL_CIPHER_ENABLED = Boolean.valueOf(
-    //        System.getProperty("test.sqlcipher.passphrase",Boolean.FALSE.toString()));
-
-    public static final String SQL_CIPHER_ENABLED = System.getProperty("test.sqlcipher.passphrase");
->>>>>>> origin/43715-sqlcipher-support
 
     String datastore_manager_dir;
     DatastoreManager datastoreManager;
@@ -50,16 +40,10 @@ public abstract class DatastoreTestBase {
         datastore_manager_dir = TestUtils.createTempTestingDir(this.getClass().getName());
         datastoreManager = new DatastoreManager(this.datastore_manager_dir);
 
-<<<<<<< HEAD
         //If SQLCipher parameter is enabled, run all tests with a SQLCipher-based datastore and passphrase
         if(Boolean.valueOf(SQL_CIPHER_ENABLED)) {
             //Create or open datastore with directory and helper class that provides a test key
             datastore = (BasicDatastore) (this.datastoreManager.openDatastore(getClass().getSimpleName(), new HelperKeyProvider()));
-=======
-        if(SQL_CIPHER_ENABLED != null) {
-            //Database name with SQLCipher enabled.  Need to have different database names if encryption is enabled.
-            datastore = (BasicDatastore) (this.datastoreManager.openDatastore(getClass().getSimpleName(), "SQLCipherTest"));
->>>>>>> origin/43715-sqlcipher-support
         } else {
             datastore = (BasicDatastore) (this.datastoreManager.openDatastore(getClass().getSimpleName()));
         }

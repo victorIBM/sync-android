@@ -55,18 +55,11 @@ public class SQLDatabaseQueue {
     /**
      * Creates an SQLQueue for the SQLCipher-based database specified.
      * @param filename The file where the database is located
-<<<<<<< HEAD
      * @param provider The key provider object that contains the user-defined SQLCipher key
      * @throws IOException If a problem occurs creating the database
      */
     public SQLDatabaseQueue(String filename, KeyProvider provider) throws IOException {
         this.db = SQLDatabaseFactory.createSQLDatabase(filename, provider);
-=======
-     * @throws IOException If an problem is encountered creating the DB
-     */
-    public SQLDatabaseQueue(String filename, String passphrase) throws IOException {
-        this.db = SQLDatabaseFactory.createSQLDatabase(filename, passphrase);
->>>>>>> origin/43715-sqlcipher-support
         queue.submit(new Runnable() {
             @Override
             public void run() {
@@ -99,11 +92,11 @@ public class SQLDatabaseQueue {
     public int getVersion() throws SQLException {
         try {
             return queue.submit(new Callable<Integer>() {
-                 @Override
-                 public Integer call() throws Exception {
-                     return db.getVersion();
-                 }
-             }).get();
+                @Override
+                public Integer call() throws Exception {
+                    return db.getVersion();
+                }
+            }).get();
         } catch (InterruptedException e) {
             logger.log(Level.SEVERE,"Failed to get database version",e);
             throw new SQLException(e);
