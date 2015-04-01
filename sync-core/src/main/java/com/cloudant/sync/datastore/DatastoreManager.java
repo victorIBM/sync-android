@@ -17,13 +17,15 @@
 
 package com.cloudant.sync.datastore;
 
+import com.cloudant.android.encryption.KeyProvider;
 import com.cloudant.sync.notifications.DatabaseClosed;
 import com.cloudant.sync.notifications.DatabaseCreated;
-import com.cloudant.sync.notifications.DatabaseOpened;
 import com.cloudant.sync.notifications.DatabaseDeleted;
+import com.cloudant.sync.notifications.DatabaseOpened;
 import com.google.common.base.Preconditions;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
@@ -31,7 +33,6 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -168,7 +169,8 @@ public class DatastoreManager {
     }
 
     /**
-     * <p>Opens a datastore that requires SQLCipher encryption.</p>
+     * <p>Opens a datastore that requires SQLCipher encryption.
+     * Key provider object contains the user defined SQLCipher key.</p>
      *
      * <p>This method finds the appropriate datastore file for a
      * datastore, then initialises a {@link Datastore} object connected
@@ -183,7 +185,7 @@ public class DatastoreManager {
      *
      * @see DatastoreManager#getEventBus()
      */
-    public Datastore openDatastore(String dbName, String passphrase) throws DatastoreNotCreatedException {
+    public Datastore openDatastore(String dbName, KeyProvider provider) throws DatastoreNotCreatedException {
         Preconditions.checkArgument(dbName.matches(LEGAL_CHARACTERS),
                 "A database must be named with all lowercase letters (a-z), digits (0-9),"
                         + " or any of the _$()+-/ characters. The name has to start with a"
@@ -191,7 +193,7 @@ public class DatastoreManager {
         if (!openedDatastores.containsKey(dbName)) {
             synchronized (openedDatastores) {
                 if (!openedDatastores.containsKey(dbName)) {
-                    Datastore ds = createDatastore(dbName, passphrase);
+                    Datastore ds = createDatastore(dbName, provider);
                     ds.getEventBus().register(this);
                     openedDatastores.put(dbName, ds);
                 }
@@ -271,7 +273,7 @@ public class DatastoreManager {
     /**
      * Creates a datastore that requires SQLCipher encryption.
      */
-    private Datastore createDatastore(String dbName, String passphrase) throws DatastoreNotCreatedException {
+    private Datastore createDatastore(String dbName, KeyProvider provider) throws DatastoreNotCreatedException {
         try {
             String dbDirectory = this.getDatastoreDirectory(dbName);
             boolean dbDirectoryExist = new File(dbDirectory).exists();
@@ -282,7 +284,7 @@ public class DatastoreManager {
             // if it does not exist
 
             //Pass database directory, database name, and SQLCipher passphrase
-            BasicDatastore ds = new BasicDatastore(dbDirectory, dbName, passphrase);
+            BasicDatastore ds = new BasicDatastore(dbDirectory, dbName, provider);
             if(!dbDirectoryExist) {
                 this.eventBus.post(new DatabaseCreated(dbName));
             }
