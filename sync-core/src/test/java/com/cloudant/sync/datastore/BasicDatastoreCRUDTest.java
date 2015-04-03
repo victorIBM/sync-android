@@ -14,6 +14,7 @@
 
 package com.cloudant.sync.datastore;
 
+import com.cloudant.android.encryption.HelperKeyProvider;
 import com.cloudant.sync.sqlite.Cursor;
 import com.cloudant.sync.sqlite.SQLDatabase;
 import com.cloudant.sync.sqlite.SQLQueueCallable;
@@ -558,7 +559,12 @@ public class BasicDatastoreCRUDTest extends BasicDatastoreTestBase {
 
     @Test
     public void createDbWithSlashAndCreateDocument() throws Exception {
-            Datastore datastore = datastoreManager.openDatastore("dbwith/aslash");
+            //Open SQLCipher-based datastore if SQLCipher parameter is 'true'
+            if(Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"))) {
+                Datastore datastore = datastoreManager.openDatastore("dbwith/aslash", new HelperKeyProvider());
+            } else {
+                Datastore datastore = datastoreManager.openDatastore("dbwith/aslash");
+            }
             MutableDocumentRevision rev = new MutableDocumentRevision();
             rev.body = bodyOne;
             BasicDocumentRevision doc = datastore.createDocumentFromRevision(rev);
