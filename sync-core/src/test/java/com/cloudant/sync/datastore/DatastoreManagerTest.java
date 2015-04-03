@@ -14,6 +14,8 @@
 
 package com.cloudant.sync.datastore;
 
+import com.cloudant.android.encryption.HelperKeyProvider;
+
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -28,6 +30,7 @@ public class DatastoreManagerTest {
 
     public static String TEST_PATH = null;
     public DatastoreManager manager = null;
+    Datastore datastore = null;
 
     @Before
     public void setUp() {
@@ -69,8 +72,13 @@ public class DatastoreManagerTest {
     }
 
     private Datastore createAndAssertDatastore() throws Exception {
-        Datastore ds = manager.openDatastore("mydatastore");
-        Assert.assertNotNull(ds);
+        //Open SQLCipher-based datastore if SQLCipher parameter is 'true'
+        if(Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"))) {
+            this.datastore = manager.openDatastore("mydatastore", new HelperKeyProvider());
+        } else {
+            this.datastore = manager.openDatastore("mydatastore");
+        }
+        Assert.assertNotNull(datastore);
         boolean assertsFailed = true;
         try {
             String dbDir = TEST_PATH + "/mydatastore";
@@ -83,9 +91,9 @@ public class DatastoreManagerTest {
             assertsFailed = false;
         } finally {
             if (assertsFailed)
-                ds.close();
+                datastore.close();
         }
-        return ds;
+        return datastore;
     }
 
     @Test
@@ -125,7 +133,12 @@ public class DatastoreManagerTest {
 
     @Test
     public void createDatastoreWithForwardSlashChar() throws Exception {
-        Datastore ds = manager.openDatastore("datastore/mynewdatastore");
+        //Open SQLCipher-based datastore if SQLCipher parameter is 'true'
+        if(Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"))) {
+            this.datastore = manager.openDatastore("datastore/mynewdatastore", new HelperKeyProvider());
+        } else {
+            this.datastore = manager.openDatastore("datastore/mynewdatastore");
+        }
         try {
             String dbDir = TEST_PATH + "/datastore.mynewdatastore";
             Assert.assertTrue(new File(dbDir).exists());
@@ -134,7 +147,7 @@ public class DatastoreManagerTest {
             Assert.assertTrue(new File(dbFile).exists());
             Assert.assertTrue(new File(dbFile).isFile());
         } finally {
-            ds.close();
+            datastore.close();
         }
 
 
@@ -144,7 +157,12 @@ public class DatastoreManagerTest {
     public void list5Datastores() throws Exception {
 
         for (int i = 0; i < 5; i++) {
-            manager.openDatastore("datastore" + i);
+            //Open SQLCipher-based datastore if SQLCipher parameter is 'true'
+            if(Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"))) {
+                this.datastore = manager.openDatastore("datastore" + i, new HelperKeyProvider());
+            } else {
+                this.datastore = manager.openDatastore("datastore" + i);
+            }
         }
 
         List<String> datastores = manager.listAllDatastores();
@@ -158,7 +176,12 @@ public class DatastoreManagerTest {
 
     @Test
     public void listDatastoresWithSlashes() throws Exception {
-        manager.openDatastore("datastore/mynewdatastore");
+        //Open SQLCipher-based datastore if SQLCipher parameter is 'true'
+        if(Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"))) {
+            this.datastore = manager.openDatastore("datastore/mynewdatastore", new HelperKeyProvider());
+        } else {
+            this.datastore = manager.openDatastore("datastore/mynewdatastore");
+        }
 
         List<String> datastores = manager.listAllDatastores();
 

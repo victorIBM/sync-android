@@ -23,8 +23,6 @@ import org.junit.Before;
 /**
  * Test base for any test suite need a <code>DatastoreManager</code> and <code>Datastore</code> instance. It
  * automatically set up and clean up the temp file directly for you.
- *
- * If the parameter 'test.sqlcipher.passphrase' is set to true, a SQLCipher-based SQLite database
  */
 public abstract class DatastoreTestBase {
 
@@ -39,9 +37,9 @@ public abstract class DatastoreTestBase {
 
         //Open SQLCipher-based datastore if SQLCipher parameter is 'true'
         if(Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"))) {
-            datastore = (BasicDatastore) (this.datastoreManager.openDatastore(getClass().getSimpleName(), new HelperKeyProvider()));
+            this.datastore = (BasicDatastore) (this.datastoreManager.openDatastore(getClass().getSimpleName(), new HelperKeyProvider()));
         } else {
-            datastore = (BasicDatastore) (this.datastoreManager.openDatastore(getClass().getSimpleName()));
+            this.datastore = (BasicDatastore) (this.datastoreManager.openDatastore(getClass().getSimpleName()));
         }
     }
 

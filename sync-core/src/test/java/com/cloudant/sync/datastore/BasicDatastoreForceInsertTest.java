@@ -49,6 +49,7 @@ public class BasicDatastoreForceInsertTest {
     @Before
     public void setUp() throws Exception {
         database_dir = TestUtils.createTempTestingDir(BasicDatastoreForceInsertTest.class.getName());
+        //Open SQLCipher-based datastore if SQLCipher parameter is 'true'
         if(Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"))) {
             datastore = new BasicDatastore(database_dir, "test", new HelperKeyProvider());
         } else {
