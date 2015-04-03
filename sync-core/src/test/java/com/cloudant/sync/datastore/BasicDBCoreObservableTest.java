@@ -14,21 +14,17 @@
 
 package com.cloudant.sync.datastore;
 
+import com.cloudant.android.encryption.HelperKeyProvider;
+import com.cloudant.sync.notifications.DocumentModified;
 import com.cloudant.sync.sqlite.SQLDatabase;
 import com.cloudant.sync.util.TestUtils;
+import com.google.common.eventbus.Subscribe;
+
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
-
-import com.cloudant.sync.notifications.DocumentModified;
-import com.google.common.eventbus.Subscribe;
-
-import java.io.File;
-import java.io.IOException;
-import java.sql.SQLException;
 
 public class BasicDBCoreObservableTest {
 
@@ -57,8 +53,12 @@ public class BasicDBCoreObservableTest {
 
     @Test
     public void createDocument_bodyOnly_success() throws Exception {
-
-        this.core = new BasicDatastore(database_dir, "test");
+        //Open SQLCipher-based datastore if SQLCipher parameter is 'true'
+        if(Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"))) {
+            this.core = new BasicDatastore(database_dir, "test", new HelperKeyProvider());
+        } else {
+            this.core = new BasicDatastore(database_dir, "test");
+        }
 
         this.jsonData = FileUtils.readFileToByteArray(TestUtils.loadFixture(documentOneFile));
         this.bodyOne = new BasicDocumentBody(jsonData);
