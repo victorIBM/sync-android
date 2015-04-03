@@ -14,17 +14,17 @@
 
 package com.cloudant.sync.datastore;
 
+import com.cloudant.android.encryption.HelperKeyProvider;
 import com.cloudant.sync.sqlite.SQLDatabase;
 import com.cloudant.sync.util.CouchUtils;
 import com.cloudant.sync.util.TestUtils;
+
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -49,7 +49,11 @@ public class BasicDatastoreForceInsertTest {
     @Before
     public void setUp() throws Exception {
         database_dir = TestUtils.createTempTestingDir(BasicDatastoreForceInsertTest.class.getName());
-        datastore = new BasicDatastore(database_dir, "test");
+        if(Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"))) {
+            datastore = new BasicDatastore(database_dir, "test", new HelperKeyProvider());
+        } else {
+            datastore = new BasicDatastore(database_dir, "test");
+        }
 
         jsonData = FileUtils.readFileToByteArray(TestUtils.loadFixture(documentOneFile));
         bodyOne = new BasicDocumentBody(jsonData);
