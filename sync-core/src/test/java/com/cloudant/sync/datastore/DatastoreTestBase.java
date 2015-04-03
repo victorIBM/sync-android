@@ -28,9 +28,6 @@ import org.junit.Before;
  */
 public abstract class DatastoreTestBase {
 
-    //System property for testing with SQLCipher-based SQLite database for Android
-    private static final String SQL_CIPHER_ENABLED = System.getProperty("test.sqlcipher.passphrase");
-
     String datastore_manager_dir;
     DatastoreManager datastoreManager;
     BasicDatastore datastore = null;
@@ -41,11 +38,11 @@ public abstract class DatastoreTestBase {
         datastoreManager = new DatastoreManager(this.datastore_manager_dir);
 
         //If SQLCipher parameter is enabled, run all tests with a SQLCipher-based datastore and passphrase
-        if(Boolean.valueOf(SQL_CIPHER_ENABLED)) {
+        if(Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"))) {
             //Create or open datastore with directory and helper class that provides a test key
-            datastore = (BasicDatastore) (this.datastoreManager.openDatastore(getClass().getSimpleName(), new HelperKeyProvider()));
+            this.datastore = (BasicDatastore) (this.datastoreManager.openDatastore(getClass().getSimpleName(), new HelperKeyProvider()));
         } else {
-            datastore = (BasicDatastore) (this.datastoreManager.openDatastore(getClass().getSimpleName()));
+            this.datastore = (BasicDatastore) (this.datastoreManager.openDatastore(getClass().getSimpleName()));
         }
     }
 
