@@ -14,11 +14,11 @@
 
 package com.cloudant.sync.datastore;
 
+import com.cloudant.android.encryption.HelperKeyProvider;
 import com.cloudant.sync.util.TestUtils;
 
-import org.junit.Assert;
-
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -26,9 +26,7 @@ import org.junit.runners.Parameterized;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileInputStream;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.UUID;
@@ -61,7 +59,12 @@ public class MultipartAttachmentWriterTests {
     public void setUp() throws Exception {
         datastore_manager_dir = TestUtils.createTempTestingDir(this.getClass().getName());
         datastoreManager = new DatastoreManager(this.datastore_manager_dir);
-        datastore = (this.datastoreManager.openDatastore(getClass().getSimpleName()));
+        //Open SQLCipher-based datastore if SQLCipher parameter is 'true'
+        if(Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"))) {
+            this.datastore = (this.datastoreManager.openDatastore(getClass().getSimpleName(), new HelperKeyProvider()));
+        } else {
+            this.datastore = (this.datastoreManager.openDatastore(getClass().getSimpleName()));
+        }
         jsonData = "{\"body\":\"This is a body.\"}".getBytes();
         bodyOne = BasicDocumentBody.bodyWith(jsonData);
     }

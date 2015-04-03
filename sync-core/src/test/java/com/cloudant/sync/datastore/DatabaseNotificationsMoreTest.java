@@ -14,6 +14,7 @@
 
 package com.cloudant.sync.datastore;
 
+import com.cloudant.android.encryption.HelperKeyProvider;
 import com.cloudant.sync.notifications.DatabaseClosed;
 import com.cloudant.sync.notifications.DatabaseCreated;
 import com.cloudant.sync.notifications.DatabaseOpened;
@@ -45,6 +46,7 @@ public class DatabaseNotificationsMoreTest {
     List<DatabaseOpened> databaseOpened = new ArrayList<DatabaseOpened>();
     List<DatabaseClosed> databaseClosed = new ArrayList<DatabaseClosed>();
     DatastoreManager datastoreManager;
+    //Datastore datastore = null;
     String datastoreManagerDir;
 
     @Before
@@ -53,6 +55,7 @@ public class DatabaseNotificationsMoreTest {
                 .createTempTestingDir(DatabaseNotificationsMoreTest.class.getName());
         datastoreManager = new DatastoreManager(datastoreManagerDir);
         datastoreManager.getEventBus().register(this);
+
         this.clearAllEventList();
     }
 
@@ -63,7 +66,14 @@ public class DatabaseNotificationsMoreTest {
 
     @Test
     public void notification_database_opened() throws Exception{
-        Datastore ds = datastoreManager.openDatastore("test123");
+        //Open SQLCipher-based datastore if SQLCipher parameter is 'true'
+        Datastore ds = null;
+        if(Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"))) {
+            ds = datastoreManager.openDatastore("test123", new HelperKeyProvider());
+        } else {
+            ds = datastoreManager.openDatastore("test123");
+        }
+
         try {
             Assert.assertThat(databaseCreated, hasSize(1));
             Assert.assertThat(databaseOpened, hasSize(1));
@@ -76,8 +86,15 @@ public class DatabaseNotificationsMoreTest {
 
     @Test
     public void notification_database_openedTwice() throws Exception {
-        Datastore ds = datastoreManager.openDatastore("test123");
-        Datastore ds1 = null ;
+        //Open SQLCipher-based datastore if SQLCipher parameter is 'true'
+        Datastore ds = null;
+        if(Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"))) {
+            ds = datastoreManager.openDatastore("test123", new HelperKeyProvider());
+        } else {
+            ds = datastoreManager.openDatastore("test123");
+        }
+
+        Datastore ds1 = null;
         try {
             Assert.assertNotNull(ds);
             Assert.assertThat(databaseCreated, hasSize(1));
@@ -85,7 +102,12 @@ public class DatabaseNotificationsMoreTest {
             Assert.assertEquals("test123", databaseCreated.get(0).dbName);
             Assert.assertEquals("test123", databaseOpened.get(0).dbName);
 
-            ds1 = datastoreManager.openDatastore("test123");
+            //Open SQLCipher-based datastore if SQLCipher parameter is 'true'
+            if(Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"))) {
+                ds1 = datastoreManager.openDatastore("test123", new HelperKeyProvider());
+            } else {
+                ds1 = datastoreManager.openDatastore("test123");
+            }
             Assert.assertThat(databaseCreated, hasSize(1));
             Assert.assertThat(databaseOpened, hasSize(1));
             Assert.assertNotNull(ds1);
@@ -96,7 +118,14 @@ public class DatabaseNotificationsMoreTest {
 
     @Test
     public void notification_databaseOpenCloseAndThenOpenedAgain_databaseCreatedEventShouldBeOnlyFireOnce() throws Exception {
-        Datastore ds = datastoreManager.openDatastore("test123");
+        //Open SQLCipher-based datastore if SQLCipher parameter is 'true'
+        Datastore ds = null;
+        if(Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"))) {
+            ds = datastoreManager.openDatastore("test123", new HelperKeyProvider());
+        } else {
+            ds = datastoreManager.openDatastore("test123");
+        }
+
         Assert.assertThat(databaseCreated, hasSize(1));
         Assert.assertThat(databaseOpened, hasSize(1));
         Assert.assertThat(databaseClosed, hasSize(0));
@@ -114,7 +143,13 @@ public class DatabaseNotificationsMoreTest {
         // DatabaseOpened event should be fired, but the
         // DatabaseCreated event should NOT be fired.
         this.clearAllEventList();
-        Datastore ds1 = datastoreManager.openDatastore("test123");
+        Datastore ds1 = null;
+        //Open SQLCipher-based datastore if SQLCipher parameter is 'true'
+        if(Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"))) {
+            ds1 = datastoreManager.openDatastore("test123", new HelperKeyProvider());
+        } else {
+            ds1 = datastoreManager.openDatastore("test123");
+        }
         try {
             Assert.assertNotNull(ds1);
             Assert.assertThat(databaseCreated, hasSize(0));

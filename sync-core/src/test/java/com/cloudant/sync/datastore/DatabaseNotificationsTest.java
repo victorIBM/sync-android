@@ -14,28 +14,28 @@
 
 package com.cloudant.sync.datastore;
 
-import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
-
+import com.cloudant.android.encryption.HelperKeyProvider;
 import com.cloudant.sync.notifications.DatabaseClosed;
 import com.cloudant.sync.notifications.DatabaseCreated;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.cloudant.sync.notifications.DatabaseOpened;
 import com.cloudant.sync.notifications.DatabaseDeleted;
+import com.cloudant.sync.notifications.DatabaseOpened;
 import com.cloudant.sync.util.TestUtils;
 import com.google.common.eventbus.Subscribe;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
 
 public class DatabaseNotificationsTest {
 
     CountDownLatch databaseCreated, databaseOpened, databaseDeleted, databaseClosed;
     DatastoreManager datastoreManager;
     String datastoreManagerDir;
+    Datastore datastore = null;
 
     @Before
     public void setUpClass() throws Exception {
@@ -57,31 +57,46 @@ public class DatabaseNotificationsTest {
     @Test
     public void notification_database_opened() throws Exception{
         databaseOpened = new CountDownLatch(1);
-        Datastore ds = datastoreManager.openDatastore("test123");
+        //Open SQLCipher-based datastore if SQLCipher parameter is 'true'
+        if(Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"))) {
+            this.datastore = datastoreManager.openDatastore("test123", new HelperKeyProvider());
+        } else {
+            this.datastore = datastoreManager.openDatastore("test123");
+        }
         try {
             boolean ok = NotificationTestUtils.waitForSignal(databaseOpened);
             Assert.assertTrue("Didn't receive database opened event", ok);
         } finally {
-            ds.close();
+            datastore.close();
         }
     }
 
     @Test
     public void notification_database_created() throws Exception {
         databaseCreated = new CountDownLatch(1);
-        Datastore ds = datastoreManager.openDatastore("test123");
+        //Open SQLCipher-based datastore if SQLCipher parameter is 'true'
+        if(Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"))) {
+            this.datastore = datastoreManager.openDatastore("test123", new HelperKeyProvider());
+        } else {
+            this.datastore = datastoreManager.openDatastore("test123");
+        }
         try {
             boolean ok = NotificationTestUtils.waitForSignal(databaseCreated);
             Assert.assertTrue("Didn't receive database created event", ok);
         } finally {
-            ds.close();
+            datastore.close();
         }
     }
 
     @Test
     public void notification_database_deleted() throws Exception {
         databaseDeleted = new CountDownLatch(1);
-        datastoreManager.openDatastore("test1234");
+        //Open SQLCipher-based datastore if SQLCipher parameter is 'true'
+        if(Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"))) {
+            this.datastore = datastoreManager.openDatastore("test1234", new HelperKeyProvider());
+        } else {
+            this.datastore = datastoreManager.openDatastore("test1234");
+        }
         try {
             datastoreManager.deleteDatastore("test1234");
         } catch (IOException e) {
@@ -94,9 +109,14 @@ public class DatabaseNotificationsTest {
     @Test
     public void notification_database_closed() throws Exception{
         databaseClosed = new CountDownLatch((1));
-        Datastore ds = datastoreManager.openDatastore("testDatabaseClosed");
-        ds.getEventBus().register(this);
-        ds.close();
+        //Open SQLCipher-based datastore if SQLCipher parameter is 'true'
+        if(Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"))) {
+            this.datastore = datastoreManager.openDatastore("testDatabaseClosed", new HelperKeyProvider());
+        } else {
+            this.datastore = datastoreManager.openDatastore("testDatabaseClosed");
+        }
+        this.datastore.getEventBus().register(this);
+        this.datastore.close();
         boolean ok = NotificationTestUtils.waitForSignal(databaseClosed);
         Assert.assertTrue("Did not received database closed event", ok);
     }
@@ -104,9 +124,14 @@ public class DatabaseNotificationsTest {
     @Test
     public void notification_databaseClosed_databaseManagerShouldPostDatabaseClosedEvent() throws Exception{
         databaseClosed = new CountDownLatch((1));
-        Datastore ds = datastoreManager.openDatastore("testDatabaseClosed");
+        //Open SQLCipher-based datastore if SQLCipher parameter is 'true'
+        if(Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"))) {
+            this.datastore = datastoreManager.openDatastore("testDatabaseClosed", new HelperKeyProvider());
+        } else {
+            this.datastore = datastoreManager.openDatastore("testDatabaseClosed");
+        }
         datastoreManager.getEventBus().register(this);
-        ds.close();
+        datastore.close();
         boolean ok = NotificationTestUtils.waitForSignal(databaseClosed);
         Assert.assertTrue("Did not received database closed event", ok);
     }

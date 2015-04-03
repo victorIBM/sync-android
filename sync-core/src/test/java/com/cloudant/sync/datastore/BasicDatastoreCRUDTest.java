@@ -558,15 +558,15 @@ public class BasicDatastoreCRUDTest extends BasicDatastoreTestBase {
     public void createDbWithSlashAndCreateDocument() throws Exception {
             //Open SQLCipher-based datastore if SQLCipher parameter is 'true'
             if(Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"))) {
-                Datastore datastore = datastoreManager.openDatastore("dbwith/aslash", new HelperKeyProvider());
+                this.datastore = (BasicDatastore) (datastoreManager.openDatastore("dbwith/aslash", new HelperKeyProvider()));
             } else {
-                Datastore datastore = datastoreManager.openDatastore("dbwith/aslash");
+                this.datastore = (BasicDatastore) (datastoreManager.openDatastore("dbwith/aslash"));
             }
             MutableDocumentRevision rev = new MutableDocumentRevision();
             rev.body = bodyOne;
             BasicDocumentRevision doc = datastore.createDocumentFromRevision(rev);
             validateNewlyCreatedDocument(doc);
-            datastore.close();
+            this.datastore.close();
     }
 
     private void getAllDocuments_testCountAndOffset(int objectCount, List<BasicDocumentRevision> expectedDocumentRevisions, boolean descending) {
