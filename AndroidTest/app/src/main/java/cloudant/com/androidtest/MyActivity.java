@@ -182,7 +182,7 @@ public class MyActivity extends ListActivity {
     protected void onListItemClick(ListView l, View v, int position, long id) {
         // get the test failure and launch a new screen for it to display full information about it
         TestResults tr = mAdapter.getItem(position);
-         //need to pack and launch new activity
+        //need to pack and launch new activity
 
         Intent intent = new Intent();
         intent.setClass(getBaseContext(), TestInformation.class);
@@ -199,7 +199,7 @@ public class MyActivity extends ListActivity {
         System.setProperty( "dexmaker.dexcache", this.getCacheDir().getPath() );
 
         for(String[] testOption : BuildConfig.TEST_CONFIG) {
-                System.setProperty(testOption[0], testOption[1]);
+            System.setProperty(testOption[0], testOption[1]);
         }
 
     }
