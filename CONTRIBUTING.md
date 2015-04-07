@@ -112,7 +112,17 @@ $ ./gradlew integrationTest
 
 
 Running the integration tests on android requires the running of a dedicated test app,
-in addition to the requirements for Java SE integration tests. 
+in addition to the requirements for Java SE integration tests.
+
+SQLCipher, an open source extension to SQLite that provides database encryption, is also
+required.  The latest binary packages (.jar and .so files) can be found here:
+https://github.com/sqlcipher/android-database-sqlcipher
+
+After downloading, move all folders containing .so files and the 'sqlcipher.jar' under
+'src/main/jniLibs' in the AndroidTest directory.  Then, move the 'icudt46l.zip' to '/src/main/assets'.
+Finally, open the module settings for the AndroidTest app and add the 'sqlcipher.jar' to the dependency list.
+[SQLCipher]: https://www.zetetic.net/sqlcipher/
+
 
 The test application build scripts require a running emulator and the ```ANDROID_HOME```
  environment variable to be set
@@ -158,6 +168,16 @@ systemProp.test.couch.auth.headers=[true|false] # default false
 Note: some tests need to be ignored based on the configuration of the CouchDB instance you are using or if you are running against Cloudant. For example if the compaction endpoint is unavailable eg returns a 403 response, these tests should be disabled. 
 
 Your gradle.properties should NEVER be checked into git repo as it contains your CouchDB credentials.
+
+#### Testing with SQLCipher encryption
+To run integration tests using the SQLCipher-based database, add the following JVM argument to 'gradle.properties':
+org.gradle.jvmargs=-Dtest.sqlcipher.passphrase=true
+
+#### Testing under a single package
+For running tests under a specific package, add the JVM argument 'test.run-packages' to 'gradle.properties' with
+the package name as the value.  Example below for running tests under the 'sync/datastore' package:
+org.gradle.jvmargs=-Dtest.run-packages=datastore
+
 
 ### Code coverage
 
