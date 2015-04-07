@@ -59,6 +59,7 @@ public class MyActivity extends ListActivity {
             //If sqlcipher testing parameter is 'true', load required library for SQLCipher datastore testing
             boolean isSQLCipherEnabled = Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"));
             if (isSQLCipherEnabled) {
+                //Initialize the native libraries for SQLCipher
                 SQLiteDatabase.loadLibs(this);
             }
 
@@ -84,7 +85,8 @@ public class MyActivity extends ListActivity {
                     for (Class c : BuildConfig.classToTests) {
                         //Check parameter for specifying which test case package to run
                         String testsToRun = String.valueOf(System.getProperty("test.run-packages"));
-                        if (!testsToRun.isEmpty()) {
+                        //Run all classes if JVM parameter for specifying packages does not exist
+                        if (!testsToRun.equals("null")) {
                             //If 'common' value is passed as a parameter, run test cases under package com.cloudant
                             if (testsToRun.equals("common") && c.getPackage().toString().contains("common")) {
                                 classes.add(c);

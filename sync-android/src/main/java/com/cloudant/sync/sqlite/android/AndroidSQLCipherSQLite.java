@@ -43,7 +43,7 @@ public class AndroidSQLCipherSQLite extends SQLDatabase {
     /**
      * Constructor for creating SQLCipher-based SQLite database.
      * @param path full file path of the db file
-     * @param provider Encryption key object that contains the user-based password
+     * @param provider Provider object that contains the key to encrypt the SQLCipher database
      * @return
      */
     public static AndroidSQLCipherSQLite createAndroidSQLite(String path, KeyProvider provider) {
@@ -57,7 +57,7 @@ public class AndroidSQLCipherSQLite extends SQLDatabase {
     /**
      * Constructor for opening SQLCipher-based SQLite database.
      * @param path full file path of the db file
-     * @param provider Encryption key object that contains the user-based password
+     * @param provider Provider object that contains the key to encrypt the SQLCipher database
      * @return
      */
     public static AndroidSQLCipherSQLite openAndroidSQLite(String path, KeyProvider provider) {
