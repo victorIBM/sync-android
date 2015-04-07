@@ -38,7 +38,6 @@ import java.util.List;
 
 import javax.xml.transform.TransformerException;
 
-//TODO need to stop the tests being re-run when we are returned to this activity
 public class MyActivity extends ListActivity {
 
     private ArrayAdapter<TestResults> mAdapter = null;
@@ -50,108 +49,113 @@ public class MyActivity extends ListActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        //If sqlcipher testing parameter is 'true', load required library for SQLCipher datastore testing
-        if(Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"))) {
-            SQLiteDatabase.loadLibs(this);
-        }
+        //Stop the tests being re-run when we are returned to this activity
+        if(savedInstanceState == null) {
 
-        super.onCreate(savedInstanceState);
+            super.onCreate(savedInstanceState);
 
-        setTestProperties();
+            setTestProperties();
 
-        trs = TestResultStorage.getInstance();
-        mAdapter = new ArrayAdapter<TestResults>(this,R.layout.list_view_text);
-        
-        if(savedInstanceState != null || trs.size() > 0){
-           testsRan = true;
-            mAdapter.addAll(trs.getAll());
-        }
+            //If sqlcipher testing parameter is 'true', load required library for SQLCipher datastore testing
+            boolean isSQLCipherEnabled = Boolean.valueOf(System.getProperty("test.sqlcipher.passphrase"));
+            if (isSQLCipherEnabled) {
+                SQLiteDatabase.loadLibs(this);
+            }
 
-        this.setListAdapter(mAdapter);
+            trs = TestResultStorage.getInstance();
+            mAdapter = new ArrayAdapter<TestResults>(this, R.layout.list_view_text);
 
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                CloudantListener listener = new CloudantListener();
+            if (savedInstanceState != null || trs.size() > 0) {
+                testsRan = true;
+                mAdapter.addAll(trs.getAll());
+            }
 
-                JUnitCore core = new JUnitCore();
-                core.addListener(listener);
+            this.setListAdapter(mAdapter);
 
-                ArrayList<Class> classes = new ArrayList<Class>();
-                for(Class c:BuildConfig.classToTests) {
-                    //Check parameter for specifying which test case package to run
-                    String testsToRun = String.valueOf(System.getProperty("test.run-packages"));
-                    if(!testsToRun.isEmpty()) {
-                        //If 'common' value is passed as a parameter, run test cases under package com.cloudant
-                        if (testsToRun.equals("common") && c.getPackage().toString().contains("common")) {
-                            classes.add(c);
-                        } else if (testsToRun.equals("mazha") && c.getPackage().toString().contains("mazha")) {
-                            classes.add(c);
-                        } else if (testsToRun.equals("datastore") && c.getPackage().toString().contains("datastore")) {
-                            classes.add(c);
-                        } else if (testsToRun.equals("indexing") && c.getPackage().toString().contains("indexing")) {
-                            classes.add(c);
-                        } else if (testsToRun.equals("query") && c.getPackage().toString().contains("query")) {
-                            classes.add(c);
-                        } else if (testsToRun.equals("replication") && c.getPackage().toString().contains("replication")) {
-                            classes.add(c);
-                        } else if (testsToRun.equals("sqlite") && c.getPackage().toString().contains("sqlite")) {
-                            classes.add(c);
-                        } else if (testsToRun.equals("util") && c.getPackage().toString().contains("util")) {
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    CloudantListener listener = new CloudantListener();
+
+                    JUnitCore core = new JUnitCore();
+                    core.addListener(listener);
+
+                    ArrayList<Class> classes = new ArrayList<Class>();
+                    for (Class c : BuildConfig.classToTests) {
+                        //Check parameter for specifying which test case package to run
+                        String testsToRun = String.valueOf(System.getProperty("test.run-packages"));
+                        if (!testsToRun.isEmpty()) {
+                            //If 'common' value is passed as a parameter, run test cases under package com.cloudant
+                            if (testsToRun.equals("common") && c.getPackage().toString().contains("common")) {
+                                classes.add(c);
+                            } else if (testsToRun.equals("mazha") && c.getPackage().toString().contains("mazha")) {
+                                classes.add(c);
+                            } else if (testsToRun.equals("datastore") && c.getPackage().toString().contains("datastore")) {
+                                classes.add(c);
+                            } else if (testsToRun.equals("indexing") && c.getPackage().toString().contains("indexing")) {
+                                classes.add(c);
+                            } else if (testsToRun.equals("query") && c.getPackage().toString().contains("query")) {
+                                classes.add(c);
+                            } else if (testsToRun.equals("replication") && c.getPackage().toString().contains("replication")) {
+                                classes.add(c);
+                            } else if (testsToRun.equals("sqlite") && c.getPackage().toString().contains("sqlite")) {
+                                classes.add(c);
+                            } else if (testsToRun.equals("util") && c.getPackage().toString().contains("util")) {
+                                classes.add(c);
+                            }
+                        } else {
                             classes.add(c);
                         }
-                    } else {
-                        classes.add(c);
                     }
-                }
 
 
-                // start with an empty filter and then add in our categories to be excluded
-                Filter filter = new Categories.CategoryFilter(null, null);
-                for(Class c : BuildConfig.testExcludes) {
-                    filter = filter.intersect(new Categories.CategoryFilter(null, c));
-                }
+                    // start with an empty filter and then add in our categories to be excluded
+                    Filter filter = new Categories.CategoryFilter(null, null);
+                    for (Class c : BuildConfig.testExcludes) {
+                        filter = filter.intersect(new Categories.CategoryFilter(null, c));
+                    }
 
-                // set up a request with our filter and our classes and run it
-                Request request = Request.classes(classes.toArray(new Class[classes.size()])).filterWith(filter);
-                final Result r = core.run(request);
-                testsRan = true;
-                final List<Failure> failures = r.getFailures();
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        if(failures.size() == 0){
-                            ArrayAdapter<String> adapter = new ArrayAdapter<String>(ctx,R.layout.list_view_text);
-                            ctx.setListAdapter(adapter);
-                            adapter.add("No Failures");
-                            adapter.add("Ran "+r.getRunCount()+" tests");
-                        }else {
-                            for (Failure f : failures) {
-                                if (f.getTestHeader().contains("initializationError("))
-                                    continue;
-                                TestResults tr = new TestResults(f);
-                                trs.add(tr);
-                                mAdapter.add(tr);
+                    // set up a request with our filter and our classes and run it
+                    Request request = Request.classes(classes.toArray(new Class[classes.size()])).filterWith(filter);
+                    final Result r = core.run(request);
+                    testsRan = true;
+                    final List<Failure> failures = r.getFailures();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (failures.size() == 0) {
+                                ArrayAdapter<String> adapter = new ArrayAdapter<String>(ctx, R.layout.list_view_text);
+                                ctx.setListAdapter(adapter);
+                                adapter.add("No Failures");
+                                adapter.add("Ran " + r.getRunCount() + " tests");
+                            } else {
+                                for (Failure f : failures) {
+                                    if (f.getTestHeader().contains("initializationError("))
+                                        continue;
+                                    TestResults tr = new TestResults(f);
+                                    trs.add(tr);
+                                    mAdapter.add(tr);
+                                }
                             }
                         }
+                    });
+
+                    JUnitXMLFormatter xmlFormatter = new JUnitXMLFormatter();
+                    try {
+                        xmlFormatter.outputResults(listener.getCompletedTests());
+                    } catch (IOException e) {
+                        e.printStackTrace(); //TODO do something here
+                    } catch (TransformerException e) {
+                        e.printStackTrace(); //TODO do something here
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-                });
-
-                JUnitXMLFormatter xmlFormatter = new JUnitXMLFormatter();
-                try {
-                    xmlFormatter.outputResults(listener.getCompletedTests());
-                } catch (IOException e) {
-                    e.printStackTrace(); //TODO do something here
-                } catch (TransformerException e) {
-                    e.printStackTrace(); //TODO do something here
-                } catch (Exception e){
-                    e.printStackTrace();
                 }
-            }
-        });
+            });
 
-        if(!testsRan) {
-            thread.start();
+            if (!testsRan) {
+                thread.start();
+            }
         }
     }
 
