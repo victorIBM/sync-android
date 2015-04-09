@@ -292,7 +292,7 @@ public class DatastoreManager {
             // dbDirectory will created in BasicDatastore constructor
             // if it does not exist
 
-            //Pass database directory, database name, and SQLCipher passphrase
+            //Pass database directory, database name, and SQLCipher key provider
             BasicDatastore ds = new BasicDatastore(dbDirectory, dbName, provider);
 
             if(!dbDirectoryExist) {
@@ -304,6 +304,8 @@ public class DatastoreManager {
             throw new DatastoreNotCreatedException("Database not found: " + dbName, e);
         } catch (SQLException e) {
             throw new DatastoreNotCreatedException("Database not initialized correctly: " + dbName, e);
+        } catch (DatastoreException e) {
+            throw new DatastoreNotCreatedException("Datastore not initialized correctly: " + dbName, e);
         }
     }
 

@@ -105,6 +105,7 @@ public class BasicDatastore implements Datastore, DatastoreExtended {
         this.extensionsDir = FilenameUtils.concat(this.datastoreDir, "extensions");
         final String dbFilename = FilenameUtils.concat(this.datastoreDir, DB_FILE_NAME);
         queue = new SQLDatabaseQueue(dbFilename);
+
         int dbVersion = queue.getVersion();
         if(dbVersion >= 100){
             throw new DatastoreException(String.format("Database version is higher than the version supported " +
@@ -128,7 +129,7 @@ public class BasicDatastore implements Datastore, DatastoreExtended {
      * @throws SQLException
      * @throws IOException
      */
-    public BasicDatastore(String dir, String name, KeyProvider provider) throws SQLException, IOException {
+    public BasicDatastore(String dir, String name, KeyProvider provider) throws SQLException, IOException, DatastoreException {
         Preconditions.checkNotNull(dir);
         Preconditions.checkNotNull(name);
 
@@ -137,9 +138,16 @@ public class BasicDatastore implements Datastore, DatastoreExtended {
         this.extensionsDir = FilenameUtils.concat(this.datastoreDir, "extensions");
         final String dbFilename = FilenameUtils.concat(this.datastoreDir, DB_FILE_NAME);
         queue = new SQLDatabaseQueue(dbFilename, provider);
+
+        int dbVersion = queue.getVersion();
+        if(dbVersion >= 100){
+            throw new DatastoreException(String.format("Database version is higher than the version supported " +
+                    "by this library, current version %d , highest supported version %d",dbVersion, 99));
+        }
         queue.updateSchema(DatastoreConstants.getSchemaVersion3(), 3);
         queue.updateSchema(DatastoreConstants.getSchemaVersion4(), 4);
         queue.updateSchema(DatastoreConstants.getSchemaVersion5(), 5);
+        queue.updateSchema(DatastoreConstants.getSchemaVersion6(), 6);
         dbOpen = true;
         this.eventBus = new EventBus();
         this.attachmentManager = new AttachmentManager(this);
@@ -719,7 +727,7 @@ public class BasicDatastore implements Datastore, DatastoreExtended {
         } catch (InterruptedException e) {
             logger.log(Level.SEVERE, "Failed to insert local document", e);
         } catch (ExecutionException e) {
-            logger.log(Level.SEVERE,"Failed to insert local document",e);
+            logger.log(Level.SEVERE, "Failed to insert local document",e);
             throw new DocumentException("Cannot insert local document",e);
         }
 
