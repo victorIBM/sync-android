@@ -77,7 +77,7 @@ public class DatastoreManager {
      *
      * @param directoryPath root directory to manage
      *
-     * @see DatastoreManager#DatastoreManager(java.io.File)
+     * @see DatastoreManager#DatastoreManager(File)
      */
     public DatastoreManager(String directoryPath) {
         this(new File(directoryPath));
@@ -106,9 +106,9 @@ public class DatastoreManager {
     }
 
     /**
-     * Lists all the names of {@link com.cloudant.sync.datastore.Datastore Datastores} managed by this DatastoreManager
+     * Lists all the names of {@link Datastore Datastores} managed by this DatastoreManager
      *
-     * @return List of {@link com.cloudant.sync.datastore.Datastore Datastores} names.
+     * @return List of {@link Datastore Datastores} names.
      */
     public List<String> listAllDatastores() {
         List<String> datastores = new ArrayList<String>();
@@ -140,13 +140,13 @@ public class DatastoreManager {
      * to that underlying storage file.</p>
      *
      * <p>If the datastore was successfully created and opened, a
-     * {@link com.cloudant.sync.notifications.DatabaseOpened DatabaseOpened}
+     * {@link DatabaseOpened DatabaseOpened}
      * event is posted on the event bus.</p>
      *
      * @param dbName name of datastore to open
      * @return {@code Datastore} with the given name
      *
-     * @throws com.cloudant.sync.datastore.DatastoreNotCreatedException Thrown when
+     * @throws DatastoreNotCreatedException Thrown when
      * the datastore could not be created or opened.
      *
      * @see DatastoreManager#getEventBus()
@@ -169,15 +169,29 @@ public class DatastoreManager {
     }
 
     /**
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
      * <p>Opens a datastore that requires SQLCipher encryption.
      * Key provider object contains the user defined SQLCipher key.</p>
+=======
+     * <p>Opens a datastore that requires SQLCipher encryption.</p>
+>>>>>>> Implement required passphrase for SQLCipher-based SQLite
+=======
+     * <p>Opens a datastore that requires SQLCipher encryption.
+     * Key provider object contains the user defined SQLCipher key.</p>
+>>>>>>> Classes that require SQLCiper key provider object
+=======
+     * <p>Opens a datastore that requires SQLCipher encryption.
+     * Key provider object contains the user defined SQLCipher key.</p>
+>>>>>>> origin/43715-sqlcipher-support
      *
      * <p>This method finds the appropriate datastore file for a
      * datastore, then initialises a {@link Datastore} object connected
      * to that underlying storage file.</p>
      *
      * <p>If the datastore was successfully created and opened, a
-     * {@link com.cloudant.sync.notifications.DatabaseOpened DatabaseOpened}
+     * {@link DatabaseOpened DatabaseOpened}
      * event is posted on the event bus.</p>
      *
      * @param dbName name of datastore to open
@@ -216,7 +230,7 @@ public class DatastoreManager {
      * out before attempting the delete.</p>
      *
      * <p>If the datastore was successfully deleted, a
-     * {@link com.cloudant.sync.notifications.DatabaseDeleted DatabaseDeleted}
+     * {@link DatabaseDeleted DatabaseDeleted}
      * event is posted on the event bus.</p>
      *
      * @throws IOException if the datastore doesn't exist on disk or there is

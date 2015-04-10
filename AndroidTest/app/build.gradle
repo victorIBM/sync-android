@@ -96,7 +96,6 @@ dependencies {
     compile 'com.google.code.findbugs:jsr305:3.0.0' //this is needed for some versions of android
 
     compile files('src/main/jniLibs/sqlcipher.jar') //required sqlcipher lib
-
 }
 
 repositories {

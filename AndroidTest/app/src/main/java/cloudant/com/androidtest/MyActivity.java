@@ -201,7 +201,7 @@ public class MyActivity extends ListActivity {
         System.setProperty( "dexmaker.dexcache", this.getCacheDir().getPath() );
 
         for(String[] testOption : BuildConfig.TEST_CONFIG) {
-                System.setProperty(testOption[0], testOption[1]);
+            System.setProperty(testOption[0], testOption[1]);
         }
 
     }

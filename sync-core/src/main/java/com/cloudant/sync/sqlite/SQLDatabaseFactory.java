@@ -173,7 +173,7 @@ public class SQLDatabaseFactory {
      * @param version
      * @throws SQLException
      *
-     * @see com.cloudant.sync.sqlite.SQLDatabase#getVersion()
+     * @see SQLDatabase#getVersion()
      */
     public static void updateSchema(SQLDatabase database, String[] schema, int version)
             throws SQLException {
