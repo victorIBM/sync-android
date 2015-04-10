@@ -14,17 +14,19 @@
 package com.cloudant.android.encryption;
 
 /**
- * This class provides a way to manage and store the SQLCipher key.
- * Currently, the key is the user provided passphrase.
+ * This class retrieves the user's SQLCipher password.
+ * A secure key is generated based on the password, and
+ * is then stored into local storage. 
+ * Currently, the key is the user provided password.
  *
  * TODO: Add JSONStore implementation for proper encryption and key management.
- * Created by estebanmlaver on 3/25/15.
+ * Created by estebanmlaver.
  */
 public class KeyProvider  {
     private String encryptedKey;
 
-    public KeyProvider(String passphrase) {
-        this.encryptedKey = passphrase;
+    public KeyProvider(String password) {
+        this.encryptedKey = password;
     }
 
     public String getEncryptedKey() {
