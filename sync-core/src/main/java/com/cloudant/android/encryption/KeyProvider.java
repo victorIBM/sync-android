@@ -16,8 +16,7 @@ package com.cloudant.android.encryption;
 /**
  * This class retrieves the user's SQLCipher password.
  * A secure key is generated based on the password, and
- * is then stored into local storage. 
- * Currently, the key is the user provided password.
+ * is then stored into local storage.
  *
  * TODO: Add JSONStore implementation for proper encryption and key management.
  * Created by estebanmlaver.

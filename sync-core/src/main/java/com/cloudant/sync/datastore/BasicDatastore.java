@@ -1641,7 +1641,6 @@ public class BasicDatastore implements Datastore, DatastoreExtended {
                         revIdKeep = newWinner.getRevision();
                     }
 
-
                     for(BasicDocumentRevision revision : docTree.leafRevisions()) {
                         if(revision.getRevision().equals(revIdKeep)) {
                             // this is the one we want to keep, set it to current

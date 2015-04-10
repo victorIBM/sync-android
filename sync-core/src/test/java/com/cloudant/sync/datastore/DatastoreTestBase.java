@@ -23,6 +23,8 @@ import org.junit.Before;
 /**
  * Test base for any test suite need a <code>DatastoreManager</code> and <code>Datastore</code> instance. It
  * automatically set up and clean up the temp file directly for you.
+ *
+ * If the parameter 'test.sqlcipher.passphrase' is set to true, a SQLCipher-based SQLite database
  */
 public abstract class DatastoreTestBase {
 
