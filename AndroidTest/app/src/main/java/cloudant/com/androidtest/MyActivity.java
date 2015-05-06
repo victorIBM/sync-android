@@ -47,6 +47,8 @@ public class MyActivity extends ListActivity {
 
     private MyActivity ctx = this;
 
+    private static final String LIBCRYPTO_FILE_NAME = "libcrypto.so.1.0.0"; //$NON-NLS-1$
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         //Stop the tests being re-run when we are returned to this activity

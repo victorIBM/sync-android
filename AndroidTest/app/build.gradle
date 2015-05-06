@@ -58,6 +58,7 @@ android {
                             "$scriptLocation/../../sync-core/src/test/java/",
                             "$scriptLocation/../../sync-core/src/main/java/",
                             "$scriptLocation/../../sync-android/src/test/java/",
+                            "$scriptLocation/../../sync-android-encryption/src/main/java/",
                             "$scriptLocation/../../sync-android/src/main/java/"]
         }
     }
