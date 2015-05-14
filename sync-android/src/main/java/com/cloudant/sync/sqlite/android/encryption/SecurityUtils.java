@@ -9,11 +9,11 @@
  * 
 */
 
-package com.cloudant.sync.sqlite.android.encryption.jsonstore;
+package com.cloudant.sync.sqlite.android.encryption;
 
 import android.os.Build;
 
-import com.cloudant.sync.sqlite.android.encryption.jsonstore.common.EncryptionUtils;
+import com.cloudant.sync.sqlite.android.encryption.common.EncryptionUtils;
 
 import java.security.SecureRandom;
 

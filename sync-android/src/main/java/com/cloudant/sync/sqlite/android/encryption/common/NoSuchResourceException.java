@@ -9,7 +9,7 @@
  * 
 */
 
-package com.cloudant.sync.sqlite.android.encryption.jsonstore.common;
+package com.cloudant.sync.sqlite.android.encryption.common;
 
 public class NoSuchResourceException extends RuntimeException {
 	

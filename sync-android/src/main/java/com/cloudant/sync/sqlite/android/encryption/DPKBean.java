@@ -14,10 +14,10 @@
  * local storage.
  */
 
-package com.cloudant.sync.sqlite.android.encryption.jsonstore;
+package com.cloudant.sync.sqlite.android.encryption;
 
-import com.cloudant.sync.sqlite.android.encryption.jsonstore.jackson.JacksonSerializedJSONObject;
-import com.cloudant.sync.sqlite.android.encryption.jsonstore.jackson.JsonOrgModule;
+import com.cloudant.sync.sqlite.android.encryption.jackson.JacksonSerializedJSONObject;
+import com.cloudant.sync.sqlite.android.encryption.jackson.JsonOrgModule;
 
 import org.json.JSONException;
 import org.json.JSONObject;

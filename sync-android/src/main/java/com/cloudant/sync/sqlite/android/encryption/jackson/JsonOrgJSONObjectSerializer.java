@@ -8,7 +8,7 @@
  * been deposited with the U.S. Copyright Office.
  * 
 */
-package com.cloudant.sync.sqlite.android.encryption.jsonstore.jackson;
+package com.cloudant.sync.sqlite.android.encryption.jackson;
 
 
 import com.fasterxml.jackson.core.JsonGenerationException;

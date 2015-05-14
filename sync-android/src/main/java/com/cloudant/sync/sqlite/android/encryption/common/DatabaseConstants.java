@@ -9,7 +9,7 @@
  * 
  */
 
-package com.cloudant.sync.sqlite.android.encryption.jsonstore.common;
+package com.cloudant.sync.sqlite.android.encryption.common;
 
 public class DatabaseConstants {
 	public static final String FIELD_DELETED = "_deleted"; //$NON-NLS-1$

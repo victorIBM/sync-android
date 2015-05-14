@@ -9,7 +9,7 @@
  * 
  */
 
-package com.cloudant.sync.sqlite.android.encryption.jsonstore;
+package com.cloudant.sync.sqlite.android.encryption;
 
 import android.content.Context;
 import android.util.Base64;

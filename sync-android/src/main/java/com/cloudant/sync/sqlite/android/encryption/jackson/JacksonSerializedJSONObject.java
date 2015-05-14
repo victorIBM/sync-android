@@ -8,26 +8,26 @@
  * been deposited with the U.S. Copyright Office.
  * 
 */
-package com.cloudant.sync.sqlite.android.encryption.jsonstore.jackson;
+package com.cloudant.sync.sqlite.android.encryption.jackson;
 
-import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
-public class JacksonSerializedJSONArray extends JSONArray {
-     private JSONArray wrappedArray;
+public class JacksonSerializedJSONObject extends JSONObject {
+     private JSONObject wrappedObject;
      
-     public JacksonSerializedJSONArray () {
+     public JacksonSerializedJSONObject () {
           super();
      }
      
-     public JacksonSerializedJSONArray (JSONArray array) {
-          this.wrappedArray = array;
+     public JacksonSerializedJSONObject (JSONObject obj) {
+          this.wrappedObject = obj;
      }
      
      @Override
      public String toString () {
-          return JsonOrgModule.serialize ((this.wrappedArray == null) ? this :
-               this.wrappedArray);
+          return JsonOrgModule.serialize ((this.wrappedObject == null) ? this :
+               this.wrappedObject);
      }
      
      @Override

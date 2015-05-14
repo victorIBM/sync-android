@@ -1,4 +1,4 @@
-package com.cloudant.sync.sqlite.android.encryption.jsonstore;
+package com.cloudant.sync.sqlite.android.encryption;
 
 /**
  * Created by estebanmlaver on 4/8/15.

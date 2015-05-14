@@ -9,9 +9,9 @@
  * 
  */
 
-package com.cloudant.sync.sqlite.android.encryption.jsonstore;
+package com.cloudant.sync.sqlite.android.encryption;
 
-import com.cloudant.sync.sqlite.android.encryption.jsonstore.common.EncryptionUtils;
+import com.cloudant.sync.sqlite.android.encryption.common.EncryptionUtils;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;

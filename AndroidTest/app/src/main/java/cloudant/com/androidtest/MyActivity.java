@@ -15,6 +15,7 @@
 package cloudant.com.androidtest;
 
 import android.app.ListActivity;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
@@ -63,6 +64,8 @@ public class MyActivity extends ListActivity {
             if (isSQLCipherEnabled) {
                 //Initialize the native libraries for SQLCipher
                 SQLiteDatabase.loadLibs(this);
+
+                loadEncryptionLib(this);
             }
 
             trs = TestResultStorage.getInstance();
@@ -200,11 +203,15 @@ public class MyActivity extends ListActivity {
 
     private void setTestProperties(){
         //set up dexcache this is a workaround for https://code.google.com/p/dexmaker/issues/detail?id=2
-        System.setProperty( "dexmaker.dexcache", this.getCacheDir().getPath() );
+        System.setProperty("dexmaker.dexcache", this.getCacheDir().getPath());
 
         for(String[] testOption : BuildConfig.TEST_CONFIG){
                 System.setProperty(testOption[0], testOption[1]);
         }
 
+    }
+
+    private void loadEncryptionLib(Context context) {
+        EncryptionUtils.loadLib(context, LIBCRYPTO_FILE_NAME);
     }
 }

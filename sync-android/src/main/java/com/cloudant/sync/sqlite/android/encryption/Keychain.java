@@ -9,12 +9,12 @@
  * 
 */
 
-package com.cloudant.sync.sqlite.android.encryption.jsonstore;
+package com.cloudant.sync.sqlite.android.encryption;
 
 import android.content.Context;
 import android.content.SharedPreferences;
 
-import com.cloudant.sync.sqlite.android.encryption.jsonstore.common.DatabaseConstants;
+import com.cloudant.sync.sqlite.android.encryption.common.DatabaseConstants;
 
 import org.json.JSONException;
 
