@@ -22,10 +22,16 @@ public class SecurityManager {
 
      private Keychain keychain;
 
+     private  Context context;
+
      private SecurityManager (Context context) {
+          this.context = context;
           this.keychain = new Keychain (context);
      }
 
+     private SecurityManager() {
+          this.keychain = new Keychain (this.context);
+     }
 
      /*private SecurityManager (Context context, String identifier) {
           this.keychain = new Keychain (context, identifier);
@@ -34,6 +40,15 @@ public class SecurityManager {
      public static synchronized SecurityManager getInstance (Context context) {
           if (SecurityManager.instance == null) {
                SecurityManager.instance = new SecurityManager(context);
+          }
+
+          return SecurityManager.instance;
+     }
+
+     public static synchronized SecurityManager getInstance () throws Exception {
+          if (SecurityManager.instance == null) {
+               //SecurityManager.instance = new SecurityManager();
+               throw new Exception("Instance does not exist.  First initialize SecurityManager with context arg.");
           }
 
           return SecurityManager.instance;
@@ -76,7 +91,7 @@ public class SecurityManager {
      //The identifier will allow for multiple keys to be saved in the Shared Preferences
      //TODO possibly add check to make sure DPK is saved
      //TODO isUpdate boolean - use to update password in later FB ticket
-     public void storeDPK (String password, String identifier, String salt, boolean isUpdate)
+     public void storeDPK (String password, String identifier, boolean isUpdate)
           throws Exception {
           String dpk;
 
@@ -84,6 +99,9 @@ public class SecurityManager {
           String encryptedDPK;
           String iv;
           String pwKey;
+
+          //Number of bytes for salt is 32
+          String salt = SecurityUtils.getRandomString(32);
 
           dpk = SecurityUtils.encodeBytesAsHexString (SecurityUtils
                   .generateLocalKey(SecurityManager.LOCAL_KEY_NUM_BYTES));

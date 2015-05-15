@@ -11,7 +11,7 @@
 
 /* Copyright (C) Worklight Ltd. 2006-2012.  All rights reserved. */
 
-package com.cloudant.sync.sqlite.android.encryption.common;
+package com.cloudant.sync.sqlite.android.encryption;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -182,12 +182,12 @@ public class EncryptionUtils {
       * then see if any other architecture folders exist and delete them since
       * they will never be used on this architecture.
       * 
-      * @param ctx
+      * @param context Android context
       * @param library example "libcrypto.so.1.0.0"
       * 
       * 
       */
-     public static final synchronized void loadLib(Context ctx, String library) {
+     public static final synchronized void loadLib(Context context, String library) {
           
           // keep track of which libs are already loaded, so we don't process multiple calls for the same lib unnecessarily
           // Notice we use a static.  This means calls to loadLib for the same 'library' parameter will be processed
@@ -211,20 +211,20 @@ public class EncryptionUtils {
                }
 
                final String libPath = "featurelibs" + File.separator +  arch + File.separator + library;
-               File sourceLocation = new File(ctx.getFilesDir(), libPath + ".zip");
+               File sourceLocation = new File(context.getFilesDir(), libPath + ".zip");
 
                // recursively delete the architecture folder that will never be used:
-               File nonArchStorage = new File(ctx.getFilesDir(), "featurelibs" + File.separator + nonArch);
+               File nonArchStorage = new File(context.getFilesDir(), "featurelibs" + File.separator + nonArch);
                deleteDirectory(nonArchStorage);
 
-               File targetFile = new File(ctx.getFilesDir(), library);
+               File targetFile = new File(context.getFilesDir(), library);
 
                // delete the target
                targetFile.delete();
 
                Log.d(TAG,"Extracting zip file: " + libPath);
                try{
-                    InputStream istr = ctx.getAssets().open(libPath + ".zip");
+                    InputStream istr = context.getAssets().open(libPath + ".zip");
                     unpack(istr, targetFile.getParentFile());
                }
                catch(IOException e){
@@ -240,6 +240,9 @@ public class EncryptionUtils {
                System.load(targetFile.getAbsolutePath());
                
                LOADED_LIBS.add (library);
+
+               //Load context in security manager
+               SecurityManager.getInstance(context);
           }
      }
 

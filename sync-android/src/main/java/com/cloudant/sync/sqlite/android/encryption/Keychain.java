@@ -14,8 +14,6 @@ package com.cloudant.sync.sqlite.android.encryption;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-import com.cloudant.sync.sqlite.android.encryption.common.DatabaseConstants;
-
 import org.json.JSONException;
 
 
@@ -24,6 +22,7 @@ public class Keychain {
 
      private static final String PREF_NAME_DPK = "dpk"; //$NON-NLS-1$
      private static final String PREFS_NAME_DPK = "dpkPrefs"; //$NON-NLS-1$
+     private static final String DEFAULT_IDENTIFIER = "jsonstore";
      private SharedPreferences prefs;
      
      protected Keychain (Context context) {
@@ -36,8 +35,8 @@ public class Keychain {
                   Context.MODE_PRIVATE);
      }*/
      
-     public DPKBean getDPKBean (String username) throws JSONException {
-          String dpkJSON = this.prefs.getString (buildTag(username), null);
+     public DPKBean getDPKBean (String identifier) throws JSONException {
+          String dpkJSON = this.prefs.getString (buildTag(identifier), null);
           
           if (dpkJSON == null) {
                return null;
@@ -46,14 +45,14 @@ public class Keychain {
           return new DPKBean (dpkJSON);
      }
      
-     public boolean isDPKAvailable (String username) {
-          return (this.prefs.getString (buildTag(username), null) != null);
+     public boolean isDPKAvailable (String identifier) {
+          return (this.prefs.getString (buildTag(identifier), null) != null);
      }
      
-     public void setDPKBean (String username, DPKBean dpkBean) {
+     public void setDPKBean (String identifier, DPKBean dpkBean) {
           SharedPreferences.Editor editor = this.prefs.edit();
           
-          editor.putString (buildTag(username), dpkBean.toString());
+          editor.putString (buildTag(identifier), dpkBean.toString());
           
           editor.commit();
      }
@@ -67,10 +66,9 @@ public class Keychain {
           editor.commit();
      }
      
-     //Builds tags like: dpk-[username]
-     //examples: dpk-carlos, dpk-tim, dpk (default user)
+     //Builds tags like: dpk-[identifier]
      private String buildTag (String tag) {
-          if (tag.equals (DatabaseConstants.DEFAULT_USERNAME)) {
+          if (tag.equals (DEFAULT_IDENTIFIER)) {
                //Use pre-2.0 jsonstore dpk keychain key
                return Keychain.PREF_NAME_DPK;
           }

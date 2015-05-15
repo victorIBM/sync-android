@@ -45,23 +45,25 @@ public class KeyProvider  {
 
     //Handle managing and storing key to open SQLCipher database in Android's shared preferences
     //For multiple databases, need to have an identifier
-    /*private String handleSQLCipherKey(String identifier, String password, Context context) { //throws JSONStoreCloseAllException, JSONStoreInvalidPasswordException {
+    private String handleSQLCipherKey(String identifier, String password) {
 
         if(identifier == null || identifier.isEmpty()) {
             identifier = "";
         }
         String dpk = null;
         if ((password != null) && !password.equals("")) {
-            //Number of bytes for salt is 32
-            String salt = SecurityUtils.getRandomString(32);
 
             try {
 
                 //Check that the identifier does not already exist
-                if (!com.cloudant.sync.sqlite.android.encryption.SecurityManager.getInstance(context).isDPKAvailable(identifier)) {
-                    SecurityManager.getInstance(context).storeDPK(password, identifier, salt, false);
+                //TODO fix
+              /*  if (!com.cloudant.sync.sqlite.android.encryption.SecurityManager.getInstance().isDPKAvailable(identifier)) {
+                    //TODO initialize Android context requirement under sync-android
+                    //SecurityManager.getInstance(context).storeDPK(password, identifier, salt, false);
+                    SecurityManager.getInstance().storeDPK(password, identifier, false);
                 }
-                dpk = SecurityManager.getInstance(context).getDPK(password, identifier);
+                dpk = SecurityManager.getInstance().getDPK(password, identifier); */
+
             } catch (Throwable e) {
                 // Password must be invalid.
                 String message = "Error setting key.";
@@ -71,6 +73,6 @@ public class KeyProvider  {
             }
         }
         return dpk;
-    }*/
+    }
 
 }

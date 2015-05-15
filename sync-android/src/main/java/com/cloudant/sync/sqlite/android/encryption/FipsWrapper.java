@@ -11,8 +11,6 @@
 
 package com.cloudant.sync.sqlite.android.encryption;
 
-import com.cloudant.sync.sqlite.android.encryption.common.EncryptionUtils;
-
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
