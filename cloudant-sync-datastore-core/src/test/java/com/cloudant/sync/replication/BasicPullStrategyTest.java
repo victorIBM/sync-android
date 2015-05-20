@@ -193,7 +193,7 @@ public class BasicPullStrategyTest extends ReplicationTestBase {
         this.pull(expectedDocs, null);
     }
 
-    private void pull(int expectedDocs, Replication.Filter filter) throws Exception {
+    protected void pull(int expectedDocs, Replication.Filter filter) throws Exception {
         TestStrategyListener listener = new TestStrategyListener();
         PullReplication pullReplication = this.createPullReplication();
         pullReplication.filter = filter;
