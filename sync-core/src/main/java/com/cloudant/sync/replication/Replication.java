@@ -153,6 +153,15 @@ public abstract class Replication {
 
     protected Replication() {
         /* prevent instances of this class being constructed */
+    /**
+     *  Creates a {@link Replicator} and calls {@link Replicator#start()}
+     * @return The replicator that is carrying out the replication.
+     */
+    public Replicator start(){
+        this.validate();
+        BasicReplicator replicator =  new BasicReplicator(this);
+        replicator.start();
+        return replicator;
     }
 
     /**
