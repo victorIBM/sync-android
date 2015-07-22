@@ -18,12 +18,11 @@
 
 package com.cloudant.mazha;
 
-import com.google.common.base.Strings;
+import com.cloudant.http.HttpConnectionRequestFilter;
+import com.cloudant.http.HttpConnectionResponseFilter;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -53,6 +52,9 @@ public class CouchConfig {
 
     // Optional custom headers
     private Map<String, String> customHeaders;
+
+    private List<HttpConnectionRequestFilter> requestFilters;
+    private List<HttpConnectionResponseFilter> responseFilters;
 
     public boolean isStaleConnectionCheckingEnabled() {
         return staleConnectionCheckingEnabled;
@@ -119,6 +121,22 @@ public class CouchConfig {
             }
         }
         this.customHeaders = customHeaders;
+    }
+
+    public List<HttpConnectionRequestFilter> getRequestFilters() {
+        return requestFilters;
+    }
+
+    public void setRequestFilters(List<HttpConnectionRequestFilter> requestFilters) {
+        this.requestFilters = requestFilters;
+    }
+
+    public List<HttpConnectionResponseFilter> getResponseFilters() {
+        return responseFilters;
+    }
+
+    public void setResponseFilters(List<HttpConnectionResponseFilter> responseFilters) {
+        this.responseFilters = responseFilters;
     }
 
     public URI getRootUri() {
