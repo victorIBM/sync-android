@@ -28,6 +28,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
+import java.util.zip.GZIPOutputStream;
 
 
 /**
@@ -192,6 +193,8 @@ public class HttpConnection  {
                     connection.setRequestProperty("Authorization", String.format("Basic %s", encodedAuth));
                 }
 
+                //set gzip encoding
+                connection.setRequestProperty("Content-Encoding", "gzip");
 
                 // always read the result, so we can retrieve the HTTP response code
                 connection.setDoInput(true);
@@ -229,7 +232,7 @@ public class HttpConnection  {
                     int nRead = 0;
                     byte[] buf = new byte[bufSize];
                     InputStream is = input;
-                    OutputStream os = connection.getOutputStream();
+                    OutputStream os = new GZIPOutputStream(connection.getOutputStream());
 
                     while ((nRead = is.read(buf)) >= 0) {
                         os.write(buf, 0, nRead);
