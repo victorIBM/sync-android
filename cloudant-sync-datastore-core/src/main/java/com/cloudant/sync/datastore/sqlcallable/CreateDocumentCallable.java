@@ -54,7 +54,7 @@ public class CreateDocumentCallable extends DocumentsCallable<BasicDocumentRevis
         attachmentManager.setAttachments(db, saved, preparedAndSavedAttachments);
         // now re-fetch the revision with updated attachments
         BasicDocumentRevision updatedWithAttachments = getDocumentInQueue(db,
-                saved.getId(), saved.getRevision());
+                saved.getId(), saved.getRevision(), attachmentManager);
         return updatedWithAttachments;
     }
 
@@ -76,7 +76,7 @@ public class CreateDocumentCallable extends DocumentsCallable<BasicDocumentRevis
         BasicDocumentRevision potentialParent = null;
 
         try {
-            potentialParent = this.getDocumentInQueue(db, docId, null);
+            potentialParent = this.getDocumentInQueue(db, docId, null, attachmentManager);
         } catch (DocumentNotFoundException e) {
             //this is an expected exception, it just means we are
             // resurrecting the document
@@ -107,7 +107,7 @@ public class CreateDocumentCallable extends DocumentsCallable<BasicDocumentRevis
         insertRevision(db, options);
 
         try {
-            BasicDocumentRevision doc = getDocumentInQueue(db, docId, options.revId);
+            BasicDocumentRevision doc = getDocumentInQueue(db, docId, options.revId, attachmentManager);
             logger.finer("New document created: " + doc.toString());
             return doc;
         } catch (DocumentNotFoundException e) {

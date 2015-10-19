@@ -76,7 +76,7 @@ public class ForceInsertCallable extends DocumentsCallable<Object> {
         // be wanted by subscribers
         BasicDocumentRevision revisionFromDB = null;
         try {
-            revisionFromDB = getDocumentInQueue(db, rev.getId(), null);
+            revisionFromDB = getDocumentInQueue(db, rev.getId(), null, attachmentManager);
         } catch (DocumentNotFoundException e) {
             // this is expected since this method is normally used by replication
             // we may be missing the document from our copy
@@ -134,7 +134,7 @@ public class ForceInsertCallable extends DocumentsCallable<Object> {
                         String id = key[0];
                         String rev = key[1];
                         try {
-                            BasicDocumentRevision doc = getDocumentInQueue(db, id, rev);
+                            BasicDocumentRevision doc = getDocumentInQueue(db, id, rev, attachmentManager);
                             if (doc != null) {
                                 for (PreparedAttachment att : preparedAttachments.get
                                         (key)) {
@@ -214,7 +214,8 @@ public class ForceInsertCallable extends DocumentsCallable<Object> {
                 "doForceInsertExistingDocumentWithHistory",
                 new Object[]{newRevision, revisions, attachments});
         Preconditions.checkNotNull(newRevision, "New document revision must not be null.");
-        Preconditions.checkArgument(this.getDocumentInQueue(db, newRevision.getId(), null) != null, "DocumentRevisionTree must exist.");
+        Preconditions.checkArgument(this.getDocumentInQueue(db, newRevision.getId(), null,
+                attachmentManager) != null, "DocumentRevisionTree must exist.");
         Preconditions.checkNotNull(revisions, "Revision history should not be null.");
         Preconditions.checkArgument(revisions.size() > 0, "Revision history should have at least one revision.");
 
@@ -261,7 +262,7 @@ public class ForceInsertCallable extends DocumentsCallable<Object> {
             //we copy attachments here so allow the exception to propagate
             parentSequence = insertStubRevision(db, docNumericID, revisions.get(i), parentSequence);
             BasicDocumentRevision newNode = this.getDocumentInQueue(db, newRevision.getId(),
-                    revisions.get(i));
+                    revisions.get(i), attachmentManager);
             localRevs.add(newNode);
         }
         // don't copy attachments
@@ -274,7 +275,8 @@ public class ForceInsertCallable extends DocumentsCallable<Object> {
         options.data = newRevision.asBytes();
         options.available = !newRevision.isDeleted();
         long sequence = insertRevision(db, options);
-        BasicDocumentRevision newLeaf = getDocumentInQueue(db, newRevision.getId(), newRevision.getRevision());
+        BasicDocumentRevision newLeaf = getDocumentInQueue(db, newRevision.getId(),
+                newRevision.getRevision(), attachmentManager);
         localRevs.add(newLeaf);
 
         // No need to refresh the previousWinner since we are inserting a new tree,
@@ -315,7 +317,7 @@ public class ForceInsertCallable extends DocumentsCallable<Object> {
             logger.finer("Inserting new stub revision, id: " + docNumericID + ", rev: " + revisions.get(i));
             this.changeDocumentToBeNotCurrent(db, parent.getSequence());
             insertStubRevision(db, docNumericID, revisions.get(i), parent.getSequence());
-            parent = getDocumentInQueue(db, newRevision.getId(), revisions.get(i));
+            parent = getDocumentInQueue(db, newRevision.getId(), revisions.get(i), attachmentManager);
             localRevs.add(parent);
         }
 
@@ -334,11 +336,13 @@ public class ForceInsertCallable extends DocumentsCallable<Object> {
         options.available = true;
         long sequence = insertRevision(db, options);
 
-        BasicDocumentRevision newLeaf = getDocumentInQueue(db, newRevision.getId(), newRevisionId);
+        BasicDocumentRevision newLeaf = getDocumentInQueue(db, newRevision.getId(), newRevisionId,
+                attachmentManager);
         localRevs.add(newLeaf);
 
         // Refresh previous leaf in case it is changed in sqlDb but not in memory
-        previousLeaf = getDocumentInQueue(db, previousLeaf.getId(), previousLeaf.getRevision());
+        previousLeaf = getDocumentInQueue(db, previousLeaf.getId(), previousLeaf.getRevision(),
+                attachmentManager);
 
         pickWinnerOfConflicts(db, previousLeaf, localRevs);
 

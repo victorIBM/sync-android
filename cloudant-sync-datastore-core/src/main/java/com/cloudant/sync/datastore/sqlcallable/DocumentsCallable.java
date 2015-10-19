@@ -131,7 +131,8 @@ public abstract class DocumentsCallable<T> extends SQLQueueCallable<T> {
      * @throws AttachmentException       If an error occurred loading the document's attachment
      * @throws DocumentNotFoundException If the document was not found.
      */
-    public BasicDocumentRevision getDocumentInQueue(SQLDatabase db, String id, String rev)
+    static public BasicDocumentRevision getDocumentInQueue(SQLDatabase db, String id, String rev,
+                                                           AttachmentManager attachmentManager)
             throws AttachmentException, DocumentNotFoundException, DatastoreException {
         Cursor cursor = null;
         try {
@@ -164,7 +165,7 @@ public abstract class DocumentsCallable<T> extends SQLQueueCallable<T> {
 
         BasicDocumentRevision prevRevision;
         try {
-            prevRevision = getDocumentInQueue(db, docId, prevRevId);
+            prevRevision = getDocumentInQueue(db, docId, prevRevId, attachmentManager);
         } catch (AttachmentException e) {
             throw new DocumentNotFoundException(e);
         }
@@ -207,7 +208,7 @@ public abstract class DocumentsCallable<T> extends SQLQueueCallable<T> {
 
         try {
             //get the deleted document revision to return to the user
-            return getDocumentInQueue(db, prevRevision.getId(), newRevisionId);
+            return getDocumentInQueue(db, prevRevision.getId(), newRevisionId, attachmentManager);
         } catch (AttachmentException e) {
             //throw document not found since we failed to load the document
             throw new DocumentNotFoundException(e);

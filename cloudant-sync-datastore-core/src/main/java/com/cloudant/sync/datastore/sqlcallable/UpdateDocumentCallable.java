@@ -57,7 +57,8 @@ public class UpdateDocumentCallable extends DocumentsCallable<BasicDocumentRevis
         // set attachments
         this.attachmentManager.setAttachments(db, updated, preparedAndSavedAttachments);
         // now re-fetch the revision with updated attachments
-        BasicDocumentRevision updatedWithAttachments = this.getDocumentInQueue(db, updated.getId(), updated.getRevision());
+        BasicDocumentRevision updatedWithAttachments = this.getDocumentInQueue(db,
+                updated.getId(), updated.getRevision(), attachmentManager);
         return updatedWithAttachments;
     }
 
@@ -77,7 +78,8 @@ public class UpdateDocumentCallable extends DocumentsCallable<BasicDocumentRevis
         }
         CouchUtils.validateRevisionId(prevRevId);
 
-        BasicDocumentRevision preRevision = this.getDocumentInQueue(db, docId, prevRevId);
+        BasicDocumentRevision preRevision = this.getDocumentInQueue(db, docId, prevRevId,
+                attachmentManager);
 
         if (!preRevision.isCurrent()) {
             throw new ConflictException("Revision to be updated is not current revision.");
@@ -85,7 +87,7 @@ public class UpdateDocumentCallable extends DocumentsCallable<BasicDocumentRevis
 
         setCurrent(db, preRevision, false);
         String newRevisionId = insertNewWinnerRevision(db, body, preRevision, copyAttachments);
-        return this.getDocumentInQueue(db, preRevision.getId(), newRevisionId);
+        return this.getDocumentInQueue(db, preRevision.getId(), newRevisionId, attachmentManager);
     }
 
     private String insertNewWinnerRevision(SQLDatabase db, DocumentBody newWinner,
