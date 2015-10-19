@@ -14,9 +14,17 @@
 
 package com.cloudant.sync.datastore.sqlcallable;
 
+import com.cloudant.sync.datastore.AttachmentException;
 import com.cloudant.sync.datastore.BasicDocumentRevision;
+import com.cloudant.sync.datastore.ConflictException;
+import com.cloudant.sync.datastore.DatastoreException;
+import com.cloudant.sync.datastore.DocumentBody;
+import com.cloudant.sync.datastore.DocumentNotFoundException;
 import com.cloudant.sync.datastore.MutableDocumentRevision;
 import com.cloudant.sync.sqlite.SQLDatabase;
+import com.cloudant.sync.util.CouchUtils;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 
 /**
  * Created by mike on 17/10/2015.
@@ -36,5 +44,79 @@ public class UpdateDocumentCallable extends DocumentsCallable<BasicDocumentRevis
     @Override
     public BasicDocumentRevision call(SQLDatabase db) throws Exception {
         return updateDocumentFromRevision(db, rev, preparedAndSavedAttachments);
+    }
+
+    private BasicDocumentRevision updateDocumentFromRevision(SQLDatabase db, MutableDocumentRevision rev,
+                                                     AttachmentManager.PreparedAndSavedAttachments preparedAndSavedAttachments)
+            throws ConflictException, AttachmentException, DocumentNotFoundException, DatastoreException {
+        Preconditions.checkNotNull(rev, "DocumentRevision can not be null");
+
+        // update document with new body
+        BasicDocumentRevision updated = this.updateDocument(db, rev.docId, rev
+                .getSourceRevisionId(), rev.body, true, false);
+        // set attachments
+        this.attachmentManager.setAttachments(db, updated, preparedAndSavedAttachments);
+        // now re-fetch the revision with updated attachments
+        BasicDocumentRevision updatedWithAttachments = this.getDocumentInQueue(db, updated.getId(), updated.getRevision());
+        return updatedWithAttachments;
+    }
+
+    private BasicDocumentRevision updateDocument(SQLDatabase db, String docId,
+                                         String prevRevId,
+                                         final DocumentBody body,
+                                         boolean validateBody,
+                                         boolean copyAttachments)
+            throws ConflictException, AttachmentException, DocumentNotFoundException, DatastoreException {
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(docId),
+                "Input document id can not be empty");
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(prevRevId),
+                "Input previous revision id can not be empty");
+        Preconditions.checkNotNull(body, "Input document body can not be null");
+        if (validateBody) {
+            validateDBBody(body);
+        }
+        CouchUtils.validateRevisionId(prevRevId);
+
+        BasicDocumentRevision preRevision = this.getDocumentInQueue(db, docId, prevRevId);
+
+        if (!preRevision.isCurrent()) {
+            throw new ConflictException("Revision to be updated is not current revision.");
+        }
+
+        setCurrent(db, preRevision, false);
+        String newRevisionId = insertNewWinnerRevision(db, body, preRevision, copyAttachments);
+        return this.getDocumentInQueue(db, preRevision.getId(), newRevisionId);
+    }
+
+    private String insertNewWinnerRevision(SQLDatabase db, DocumentBody newWinner,
+                                           BasicDocumentRevision oldWinner,
+                                           boolean copyAttachments)
+            throws AttachmentException, DatastoreException {
+        String newRevisionId = CouchUtils.generateNextRevisionId(oldWinner.getRevision());
+
+        DocumentsCallable.InsertRevisionOptions options = new DocumentsCallable.InsertRevisionOptions();
+        options.docNumericId = oldWinner.getInternalNumericId();
+        options.revId = newRevisionId;
+        options.parentSequence = oldWinner.getSequence();
+        options.deleted = false;
+        options.current = true;
+        options.data = newWinner.asBytes();
+        options.available = true;
+
+        if (copyAttachments) {
+            this.insertRevisionAndCopyAttachments(db, options);
+        } else {
+            this.insertRevision(db, options);
+        }
+
+        return newRevisionId;
+    }
+
+    private long insertRevisionAndCopyAttachments(SQLDatabase db, DocumentsCallable.InsertRevisionOptions options) throws AttachmentException, DatastoreException {
+        long newSequence = insertRevision(db, options);
+        //always copy attachments
+        this.attachmentManager.copyAttachments(db, options.parentSequence, newSequence);
+        // inserted revision and copied attachments, so we are done
+        return newSequence;
     }
 }

@@ -98,8 +98,8 @@ public class ResolveConflictsCallable extends DocumentsCallable<Object> {
 
         // if it's MutableDocumentRev: graft the new revision on
         if (newWinner.getClass() == MutableDocumentRevision.class) {
-            updateDocumentFromRevision(db, (MutableDocumentRevision) newWinner,
-                    preparedAndSavedAttachments);
+            new UpdateDocumentCallable((MutableDocumentRevision) newWinner,
+                    preparedAndSavedAttachments, attachmentManager).call(db);
         }
 
         return null;

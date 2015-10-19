@@ -59,21 +59,6 @@ public abstract class DocumentsCallable<T> extends SQLQueueCallable<T> {
         this.attachmentManager = attachmentManager;
     }
 
-    BasicDocumentRevision updateDocumentFromRevision(SQLDatabase db, MutableDocumentRevision rev,
-                                                     AttachmentManager.PreparedAndSavedAttachments preparedAndSavedAttachments)
-            throws ConflictException, AttachmentException, DocumentNotFoundException, DatastoreException {
-        Preconditions.checkNotNull(rev, "DocumentRevision can not be null");
-
-        // update document with new body
-        BasicDocumentRevision updated = this.updateDocument(db, rev.docId, rev
-                .getSourceRevisionId(), rev.body, true, false);
-        // set attachments
-        this.attachmentManager.setAttachments(db, updated, preparedAndSavedAttachments);
-        // now re-fetch the revision with updated attachments
-        BasicDocumentRevision updatedWithAttachments = this.getDocumentInQueue(db, updated.getId(), updated.getRevision());
-        return updatedWithAttachments;
-    }
-
     static final String FULL_DOCUMENT_COLS = "docs.docid, docs.doc_id, revid, sequence, json, current, deleted, parent";
 
     private static final String GET_DOCUMENT_CURRENT_REVISION =
@@ -168,33 +153,6 @@ public abstract class DocumentsCallable<T> extends SQLQueueCallable<T> {
         }
     }
 
-    BasicDocumentRevision updateDocument(SQLDatabase db, String docId,
-                                         String prevRevId,
-                                         final DocumentBody body,
-                                         boolean validateBody,
-                                         boolean copyAttachments)
-            throws ConflictException, AttachmentException, DocumentNotFoundException, DatastoreException {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(docId),
-                "Input document id can not be empty");
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(prevRevId),
-                "Input previous revision id can not be empty");
-        Preconditions.checkNotNull(body, "Input document body can not be null");
-        if (validateBody) {
-            validateDBBody(body);
-        }
-        CouchUtils.validateRevisionId(prevRevId);
-
-        BasicDocumentRevision preRevision = this.getDocumentInQueue(db, docId, prevRevId);
-
-        if (!preRevision.isCurrent()) {
-            throw new ConflictException("Revision to be updated is not current revision.");
-        }
-
-        setCurrent(db, preRevision, false);
-        String newRevisionId = insertNewWinnerRevision(db, body, preRevision, copyAttachments);
-        return this.getDocumentInQueue(db, preRevision.getId(), newRevisionId);
-    }
-
     BasicDocumentRevision deleteDocumentInQueue(SQLDatabase db, final String docId,
                                                 final String prevRevId) throws ConflictException, DocumentNotFoundException, DatastoreException {
         Preconditions.checkArgument(!Strings.isNullOrEmpty(docId),
@@ -263,44 +221,12 @@ public abstract class DocumentsCallable<T> extends SQLQueueCallable<T> {
         db.update("revs", updateContent, "sequence=?", whereArgs);
     }
 
-    void validateDBBody(DocumentBody body) {
+    static void validateDBBody(DocumentBody body) {
         for (String name : body.asMap().keySet()) {
             if (name.startsWith("_")) {
                 throw new InvalidDocumentException("Field name start with '_' is not allowed. ");
             }
         }
-    }
-
-    private String insertNewWinnerRevision(SQLDatabase db, DocumentBody newWinner,
-                                           BasicDocumentRevision oldWinner,
-                                           boolean copyAttachments)
-            throws AttachmentException, DatastoreException {
-        String newRevisionId = CouchUtils.generateNextRevisionId(oldWinner.getRevision());
-
-        DocumentsCallable.InsertRevisionOptions options = new DocumentsCallable.InsertRevisionOptions();
-        options.docNumericId = oldWinner.getInternalNumericId();
-        options.revId = newRevisionId;
-        options.parentSequence = oldWinner.getSequence();
-        options.deleted = false;
-        options.current = true;
-        options.data = newWinner.asBytes();
-        options.available = true;
-
-        if (copyAttachments) {
-            this.insertRevisionAndCopyAttachments(db, options);
-        } else {
-            this.insertRevision(db, options);
-        }
-
-        return newRevisionId;
-    }
-
-    private long insertRevisionAndCopyAttachments(SQLDatabase db, DocumentsCallable.InsertRevisionOptions options) throws AttachmentException, DatastoreException {
-        long newSequence = insertRevision(db, options);
-        //always copy attachments
-        this.attachmentManager.copyAttachments(db, options.parentSequence, newSequence);
-        // inserted revision and copied attachments, so we are done
-        return newSequence;
     }
 
     long insertRevision(SQLDatabase db, DocumentsCallable.InsertRevisionOptions options) {
