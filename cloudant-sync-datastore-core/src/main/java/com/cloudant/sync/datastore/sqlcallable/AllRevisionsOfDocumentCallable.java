@@ -22,6 +22,7 @@ import com.cloudant.sync.datastore.DocumentNotFoundException;
 import com.cloudant.sync.datastore.DocumentRevisionTree;
 import com.cloudant.sync.sqlite.Cursor;
 import com.cloudant.sync.sqlite.SQLDatabase;
+import com.cloudant.sync.sqlite.SQLQueueCallable;
 import com.cloudant.sync.util.DatabaseUtils;
 
 import java.sql.SQLException;
@@ -32,14 +33,15 @@ import java.util.logging.Logger;
 /**
  * Created by mike on 17/10/2015.
  */
-public class AllRevisionsOfDocumentCallable extends DocumentsCallable<DocumentRevisionTree> {
+public class AllRevisionsOfDocumentCallable extends SQLQueueCallable<DocumentRevisionTree> {
 
     private static final Logger logger = Logger.getLogger(AllRevisionsOfDocumentCallable.class.getCanonicalName());
     private final String docId;
+    private final AttachmentManager attachmentManager;
 
     public AllRevisionsOfDocumentCallable(String docId, AttachmentManager attachmentManager) {
-        super(attachmentManager);
         this.docId = docId;
+        this.attachmentManager = attachmentManager;
     }
 
     @Override
@@ -49,7 +51,7 @@ public class AllRevisionsOfDocumentCallable extends DocumentsCallable<DocumentRe
 
     private DocumentRevisionTree getAllRevisionsOfDocumentInQueue(SQLDatabase db, String docId)
             throws DocumentNotFoundException, AttachmentException, DatastoreException {
-        String sql = "SELECT " + FULL_DOCUMENT_COLS + " FROM revs, docs " +
+        String sql = "SELECT " + DocumentsCallable.FULL_DOCUMENT_COLS + " FROM revs, docs " +
                 "WHERE docs.docid=? AND revs.doc_id = docs.doc_id ORDER BY sequence ASC";
 
         String[] args = {docId};
@@ -61,7 +63,7 @@ public class AllRevisionsOfDocumentCallable extends DocumentsCallable<DocumentRe
             while (cursor.moveToNext()) {
                 long sequence = cursor.getLong(3);
                 List<? extends Attachment> atts = attachmentManager.attachmentsForRevision(db, sequence);
-                BasicDocumentRevision rev = getFullRevisionFromCurrentCursor(cursor, atts);
+                BasicDocumentRevision rev = DocumentsCallable.getFullRevisionFromCurrentCursor(cursor, atts);
                 logger.finer("Rev: " + rev);
                 tree.add(rev);
             }

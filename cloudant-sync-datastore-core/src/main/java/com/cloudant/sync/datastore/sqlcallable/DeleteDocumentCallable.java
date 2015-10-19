@@ -14,10 +14,12 @@
 
 package com.cloudant.sync.datastore.sqlcallable;
 
+import com.cloudant.sync.datastore.Attachment;
 import com.cloudant.sync.datastore.BasicDocumentRevision;
 import com.cloudant.sync.datastore.DatastoreException;
 import com.cloudant.sync.sqlite.Cursor;
 import com.cloudant.sync.sqlite.SQLDatabase;
+import com.cloudant.sync.sqlite.SQLQueueCallable;
 import com.cloudant.sync.util.DatabaseUtils;
 
 import java.sql.SQLException;
@@ -27,13 +29,14 @@ import java.util.List;
 /**
  * Callable to delete with given ID, regardless of rev
  */
-public class DeleteDocumentCallable extends DocumentsCallable<List<BasicDocumentRevision>> {
+public class DeleteDocumentCallable extends SQLQueueCallable<List<BasicDocumentRevision>> {
 
     private final String id;
+    private final AttachmentManager attachmentManager;
 
     public DeleteDocumentCallable(String id, AttachmentManager attachmentManager) {
-        super(attachmentManager);
         this.id = id;
+        this.attachmentManager = attachmentManager;
     }
 
     @Override
@@ -52,7 +55,8 @@ public class DeleteDocumentCallable extends DocumentsCallable<List<BasicDocument
             cursor = db.rawQuery(sql, new String[]{id});
             while (cursor.moveToNext()) {
                 String revId = cursor.getString(0);
-                deleted.add(deleteDocumentInQueue(db, id, revId, attachmentManager));
+                deleted.add(DocumentsCallable.deleteDocumentInQueue(db, id, revId,
+                        attachmentManager));
             }
             return deleted;
         } catch (SQLException sqe) {

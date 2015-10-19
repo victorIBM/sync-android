@@ -20,6 +20,7 @@ import com.cloudant.sync.datastore.DatastoreException;
 import com.cloudant.sync.datastore.DocumentException;
 import com.cloudant.sync.datastore.DocumentNotFoundException;
 import com.cloudant.sync.sqlite.SQLDatabase;
+import com.cloudant.sync.sqlite.SQLQueueCallable;
 import com.cloudant.sync.util.DatabaseUtils;
 import com.google.common.collect.Lists;
 
@@ -31,13 +32,14 @@ import java.util.List;
 /**
  * Created by mike on 17/10/2015.
  */
-public class GetDocumentsWithInternalIdsCallable extends DocumentsCallable<List<BasicDocumentRevision>> {
+public class GetDocumentsWithInternalIdsCallable extends SQLQueueCallable<List<BasicDocumentRevision>> {
     private final List<Long> docIds;
+    private final AttachmentManager attachmentManager;
 
     public GetDocumentsWithInternalIdsCallable(List<Long> docIds, AttachmentManager
             attachmentManager) {
-        super(attachmentManager);
         this.docIds = docIds;
+        this.attachmentManager = attachmentManager;
     }
 
     @Override
@@ -53,7 +55,8 @@ public class GetDocumentsWithInternalIdsCallable extends DocumentsCallable<List<
             return Collections.emptyList();
         }
 
-        final String GET_DOCUMENTS_BY_INTERNAL_IDS = "SELECT " + FULL_DOCUMENT_COLS + " FROM revs, docs " +
+        final String GET_DOCUMENTS_BY_INTERNAL_IDS = "SELECT " +
+                DocumentsCallable.FULL_DOCUMENT_COLS + " FROM revs, docs " +
                 "WHERE revs.doc_id IN ( %s ) AND current = 1 AND docs.doc_id = revs.doc_id";
 
         // Split into batches because SQLite has a limit on the number
@@ -73,7 +76,8 @@ public class GetDocumentsWithInternalIdsCallable extends DocumentsCallable<List<
             for (int i = 0; i < batch.size(); i++) {
                 args[i] = Long.toString(batch.get(i));
             }
-            result.addAll(getRevisionsFromRawQuery(db, sql, args, attachmentManager));
+            result.addAll(DocumentsCallable.getRevisionsFromRawQuery(db, sql, args,
+                    attachmentManager));
         }
 
         // Contract is to sort by sequence number, which we need to do

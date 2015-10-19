@@ -18,6 +18,7 @@ import com.cloudant.sync.datastore.BasicDocumentRevision;
 import com.cloudant.sync.datastore.Changes;
 import com.cloudant.sync.sqlite.Cursor;
 import com.cloudant.sync.sqlite.SQLDatabase;
+import com.cloudant.sync.sqlite.SQLQueueCallable;
 import com.cloudant.sync.util.DatabaseUtils;
 
 import java.sql.SQLException;
@@ -27,17 +28,18 @@ import java.util.List;
 /**
  * Created by mike on 17/10/2015.
  */
-public class ChangesCallable extends DocumentsCallable<Changes> {
+public class ChangesCallable extends SQLQueueCallable<Changes> {
     private final long verifiedSince;
     private final int limit;
+    private final AttachmentManager attachmentManager;
 
     private static final String SQL_CHANGE_IDS_SINCE_LIMIT = "SELECT doc_id, max(sequence) FROM revs " +
             "WHERE sequence > ? AND sequence <= ? GROUP BY doc_id ";
 
     public ChangesCallable(long verifiedSince, int limit, AttachmentManager attachmentManager) {
-        super(attachmentManager);
         this.verifiedSince = verifiedSince;
         this.limit = limit;
+        this.attachmentManager = attachmentManager;
     }
 
     @Override

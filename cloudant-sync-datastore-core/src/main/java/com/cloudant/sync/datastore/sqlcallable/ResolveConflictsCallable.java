@@ -20,6 +20,7 @@ import com.cloudant.sync.datastore.DocumentRevision;
 import com.cloudant.sync.datastore.DocumentRevisionTree;
 import com.cloudant.sync.datastore.MutableDocumentRevision;
 import com.cloudant.sync.sqlite.SQLDatabase;
+import com.cloudant.sync.sqlite.SQLQueueCallable;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -27,17 +28,18 @@ import java.util.logging.Logger;
 /**
  * Created by mike on 17/10/2015.
  */
-public class ResolveConflictsCallable extends DocumentsCallable<Object> {
+public class ResolveConflictsCallable extends SQLQueueCallable<Object> {
     private final String docId;
     private final ConflictResolver resolver;
+    private final AttachmentManager attachmentManager;
 
     private final Logger logger = Logger.getLogger(ResolveConflictsCallable.class.getCanonicalName());
 
     public ResolveConflictsCallable(String docId, ConflictResolver resolver, AttachmentManager
             attachmentManager) {
-        super(attachmentManager);
         this.docId = docId;
         this.resolver = resolver;
+        this.attachmentManager = attachmentManager;
     }
 
     @Override
@@ -82,16 +84,16 @@ public class ResolveConflictsCallable extends DocumentsCallable<Object> {
         for (BasicDocumentRevision revision : docTree.leafRevisions()) {
             if (revision.getRevision().equals(revIdKeep)) {
                 // this is the one we want to keep, set it to current
-                setCurrent(db, revision, true);
+                DocumentsCallable.setCurrent(db, revision, true);
             } else {
                 if (revision.isDeleted()) {
                     // if it is deleted, just make it non-current
-                    setCurrent(db, revision, false);
+                    DocumentsCallable.setCurrent(db, revision, false);
                 } else {
                     // if it's not deleted, deleted and make it non-current
-                    BasicDocumentRevision deleted = deleteDocumentInQueue(db,
+                    BasicDocumentRevision deleted = DocumentsCallable.deleteDocumentInQueue(db,
                             revision.getId(), revision.getRevision(), attachmentManager);
-                    setCurrent(db, deleted, false);
+                    DocumentsCallable.setCurrent(db, deleted, false);
                 }
             }
         }

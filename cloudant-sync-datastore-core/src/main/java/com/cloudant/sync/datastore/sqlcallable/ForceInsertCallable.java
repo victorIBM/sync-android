@@ -15,6 +15,7 @@
 package com.cloudant.sync.datastore.sqlcallable;
 
 import com.cloudant.android.Base64InputStreamFactory;
+import com.cloudant.sync.datastore.Attachment;
 import com.cloudant.sync.datastore.AttachmentException;
 import com.cloudant.sync.datastore.BasicDocumentRevision;
 import com.cloudant.sync.datastore.DatastoreException;
@@ -26,6 +27,7 @@ import com.cloudant.sync.notifications.DocumentCreated;
 import com.cloudant.sync.notifications.DocumentUpdated;
 import com.cloudant.sync.sqlite.ContentValues;
 import com.cloudant.sync.sqlite.SQLDatabase;
+import com.cloudant.sync.sqlite.SQLQueueCallable;
 import com.cloudant.sync.util.JSONUtils;
 import com.google.common.base.Preconditions;
 
@@ -42,24 +44,25 @@ import java.util.logging.Logger;
 /**
  * Created by mike on 17/10/2015.
  */
-public class ForceInsertCallable extends DocumentsCallable<Object> {
+public class ForceInsertCallable extends SQLQueueCallable<Object> {
     private final BasicDocumentRevision rev;
     private final List<String> revisionHistory;
     private final Map<String, Object> attachments;
     private final boolean pullAttachmentsInline;
     private final Map<String[], List<PreparedAttachment>> preparedAttachments;
+    private final AttachmentManager attachmentManager;
     private final Logger logger = Logger.getLogger(ForceInsertCallable.class.getCanonicalName());
 
     public ForceInsertCallable(BasicDocumentRevision rev, List<String> revisionHistory,
                                Map<String, Object> attachments, boolean
                                        pullAttachmentsInline, Map<String[],
             List<PreparedAttachment>> preparedAttachments, AttachmentManager attachmentManager) {
-        super(attachmentManager);
         this.rev = rev;
         this.revisionHistory = revisionHistory;
         this.attachments = attachments;
         this.pullAttachmentsInline = pullAttachmentsInline;
         this.preparedAttachments = preparedAttachments;
+        this.attachmentManager = attachmentManager;
     }
 
     @Override
@@ -76,7 +79,8 @@ public class ForceInsertCallable extends DocumentsCallable<Object> {
         // be wanted by subscribers
         BasicDocumentRevision revisionFromDB = null;
         try {
-            revisionFromDB = getDocumentInQueue(db, rev.getId(), null, attachmentManager);
+            revisionFromDB = DocumentsCallable.getDocumentInQueue(db, rev.getId(), null,
+                    attachmentManager);
         } catch (DocumentNotFoundException e) {
             // this is expected since this method is normally used by replication
             // we may be missing the document from our copy
@@ -134,7 +138,8 @@ public class ForceInsertCallable extends DocumentsCallable<Object> {
                         String id = key[0];
                         String rev = key[1];
                         try {
-                            BasicDocumentRevision doc = getDocumentInQueue(db, id, rev, attachmentManager);
+                            BasicDocumentRevision doc = DocumentsCallable.getDocumentInQueue(db,
+                                    id, rev, attachmentManager);
                             if (doc != null) {
                                 for (PreparedAttachment att : preparedAttachments.get
                                         (key)) {
@@ -181,7 +186,7 @@ public class ForceInsertCallable extends DocumentsCallable<Object> {
                 "doForceInsertNewDocumentWithHistory()",
                 new Object[]{rev, revHistory});
 
-        long docNumericID = insertDocumentID(db, rev.getId());
+        long docNumericID = DocumentsCallable.insertDocumentID(db, rev.getId());
         long parentSequence = 0L;
         for (int i = 0; i < revHistory.size() - 1; i++) {
             // Insert stub node
@@ -196,7 +201,7 @@ public class ForceInsertCallable extends DocumentsCallable<Object> {
         options.current = true;
         options.data = rev.getBody().asBytes();
         options.available = true;
-        long sequence = insertRevision(db, options);
+        long sequence = DocumentsCallable.insertRevision(db, options);
         return sequence;
     }
 
@@ -214,7 +219,8 @@ public class ForceInsertCallable extends DocumentsCallable<Object> {
                 "doForceInsertExistingDocumentWithHistory",
                 new Object[]{newRevision, revisions, attachments});
         Preconditions.checkNotNull(newRevision, "New document revision must not be null.");
-        Preconditions.checkArgument(this.getDocumentInQueue(db, newRevision.getId(), null,
+        Preconditions.checkArgument(DocumentsCallable.getDocumentInQueue(db, newRevision.getId(),
+                null,
                 attachmentManager) != null, "DocumentRevisionTree must exist.");
         Preconditions.checkNotNull(revisions, "Revision history should not be null.");
         Preconditions.checkArgument(revisions.size() > 0, "Revision history should have at least one revision.");
@@ -261,7 +267,8 @@ public class ForceInsertCallable extends DocumentsCallable<Object> {
         for (int i = 0; i < revisions.size() - 1; i++) {
             //we copy attachments here so allow the exception to propagate
             parentSequence = insertStubRevision(db, docNumericID, revisions.get(i), parentSequence);
-            BasicDocumentRevision newNode = this.getDocumentInQueue(db, newRevision.getId(),
+            BasicDocumentRevision newNode = DocumentsCallable.getDocumentInQueue(db, newRevision
+                            .getId(),
                     revisions.get(i), attachmentManager);
             localRevs.add(newNode);
         }
@@ -274,8 +281,9 @@ public class ForceInsertCallable extends DocumentsCallable<Object> {
         options.current = false; // we'll call pickWinnerOfConflicts to set this if it needs it
         options.data = newRevision.asBytes();
         options.available = !newRevision.isDeleted();
-        long sequence = insertRevision(db, options);
-        BasicDocumentRevision newLeaf = getDocumentInQueue(db, newRevision.getId(),
+        long sequence = DocumentsCallable.insertRevision(db, options);
+        BasicDocumentRevision newLeaf = DocumentsCallable.getDocumentInQueue(db, newRevision
+                        .getId(),
                 newRevision.getRevision(), attachmentManager);
         localRevs.add(newLeaf);
 
@@ -317,7 +325,8 @@ public class ForceInsertCallable extends DocumentsCallable<Object> {
             logger.finer("Inserting new stub revision, id: " + docNumericID + ", rev: " + revisions.get(i));
             this.changeDocumentToBeNotCurrent(db, parent.getSequence());
             insertStubRevision(db, docNumericID, revisions.get(i), parent.getSequence());
-            parent = getDocumentInQueue(db, newRevision.getId(), revisions.get(i), attachmentManager);
+            parent = DocumentsCallable.getDocumentInQueue(db, newRevision.getId(), revisions.get
+                    (i), attachmentManager);
             localRevs.add(parent);
         }
 
@@ -334,14 +343,16 @@ public class ForceInsertCallable extends DocumentsCallable<Object> {
         options.current = false; // we'll call pickWinnerOfConflicts to set this if it needs it
         options.data = newRevision.asBytes();
         options.available = true;
-        long sequence = insertRevision(db, options);
+        long sequence = DocumentsCallable.insertRevision(db, options);
 
-        BasicDocumentRevision newLeaf = getDocumentInQueue(db, newRevision.getId(), newRevisionId,
+        BasicDocumentRevision newLeaf = DocumentsCallable.getDocumentInQueue(db, newRevision
+                        .getId(), newRevisionId,
                 attachmentManager);
         localRevs.add(newLeaf);
 
         // Refresh previous leaf in case it is changed in sqlDb but not in memory
-        previousLeaf = getDocumentInQueue(db, previousLeaf.getId(), previousLeaf.getRevision(),
+        previousLeaf = DocumentsCallable.getDocumentInQueue(db, previousLeaf.getId(),
+                previousLeaf.getRevision(),
                 attachmentManager);
 
         pickWinnerOfConflicts(db, previousLeaf, localRevs);
@@ -432,7 +443,7 @@ public class ForceInsertCallable extends DocumentsCallable<Object> {
         options.current = false;
         options.data = JSONUtils.EMPTY_JSON;
         options.available = false;
-        return insertRevision(db, options);
+        return DocumentsCallable.insertRevision(db, options);
     }
 
     private boolean checkCurrentRevisionIsInRevisionHistory(BasicDocumentRevision rev, List<String> revisionHistory) {

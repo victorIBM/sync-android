@@ -16,22 +16,24 @@ package com.cloudant.sync.datastore.sqlcallable;
 
 import com.cloudant.sync.datastore.BasicDocumentRevision;
 import com.cloudant.sync.sqlite.SQLDatabase;
+import com.cloudant.sync.sqlite.SQLQueueCallable;
 
 /**
  * Callable to get a document with id and rev
  */
-public class GetDocumentCallable extends DocumentsCallable<BasicDocumentRevision> {
+public class GetDocumentCallable extends SQLQueueCallable<BasicDocumentRevision> {
     private final String id;
     private final String rev;
+    private final AttachmentManager attachmentManager;
 
     public GetDocumentCallable(String id, String rev, AttachmentManager attachmentManager) {
-        super(attachmentManager);
         this.id = id;
         this.rev = rev;
+        this.attachmentManager = attachmentManager;
     }
 
     @Override
     public BasicDocumentRevision call(SQLDatabase db) throws Exception {
-        return getDocumentInQueue(db, id, rev, attachmentManager);
+        return DocumentsCallable.getDocumentInQueue(db, id, rev, attachmentManager);
     }
 }

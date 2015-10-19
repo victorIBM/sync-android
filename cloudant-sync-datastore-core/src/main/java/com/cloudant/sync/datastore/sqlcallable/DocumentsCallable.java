@@ -49,7 +49,7 @@ import java.util.logging.Logger;
 /**
  * Created by mike on 17/10/2015.
  */
-public abstract class DocumentsCallable<T> extends SQLQueueCallable<T> {
+public class DocumentsCallable {
 
     private static final Logger logger = Logger.getLogger(DocumentsCallable.class.getCanonicalName());
 

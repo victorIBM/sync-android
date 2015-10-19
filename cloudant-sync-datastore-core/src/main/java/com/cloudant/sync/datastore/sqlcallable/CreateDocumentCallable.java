@@ -22,6 +22,7 @@ import com.cloudant.sync.datastore.DocumentBody;
 import com.cloudant.sync.datastore.DocumentNotFoundException;
 import com.cloudant.sync.datastore.MutableDocumentRevision;
 import com.cloudant.sync.sqlite.SQLDatabase;
+import com.cloudant.sync.sqlite.SQLQueueCallable;
 import com.cloudant.sync.util.CouchUtils;
 import com.google.common.base.Preconditions;
 
@@ -30,20 +31,21 @@ import java.util.logging.Logger;
 /**
  * Created by mike on 17/10/2015.
  */
-public class CreateDocumentCallable extends DocumentsCallable<BasicDocumentRevision> {
+public class CreateDocumentCallable extends SQLQueueCallable<BasicDocumentRevision> {
     private final Logger logger = Logger.getLogger(CreateDocumentCallable.class.getCanonicalName());
     private final String docId;
     private final MutableDocumentRevision rev;
     private final AttachmentManager.PreparedAndSavedAttachments preparedAndSavedAttachments;
+    private final AttachmentManager attachmentManager;
 
     public CreateDocumentCallable(String docId, MutableDocumentRevision rev,
                                   AttachmentManager.PreparedAndSavedAttachments
                                           preparedAndSavedAttachments, AttachmentManager
                                           attachmentManager) {
-        super(attachmentManager);
         this.docId = docId;
         this.rev = rev;
         this.preparedAndSavedAttachments = preparedAndSavedAttachments;
+        this.attachmentManager = attachmentManager;
     }
 
     @Override
@@ -53,7 +55,7 @@ public class CreateDocumentCallable extends DocumentsCallable<BasicDocumentRevis
         // set attachments
         attachmentManager.setAttachments(db, saved, preparedAndSavedAttachments);
         // now re-fetch the revision with updated attachments
-        BasicDocumentRevision updatedWithAttachments = getDocumentInQueue(db,
+        BasicDocumentRevision updatedWithAttachments = DocumentsCallable.getDocumentInQueue(db,
                 saved.getId(), saved.getRevision(), attachmentManager);
         return updatedWithAttachments;
     }
@@ -62,7 +64,7 @@ public class CreateDocumentCallable extends DocumentsCallable<BasicDocumentRevis
             throws AttachmentException, ConflictException, DatastoreException {
         CouchUtils.validateDocumentId(docId);
         Preconditions.checkNotNull(body, "Input document body can not be null");
-        validateDBBody(body);
+        DocumentsCallable.validateDBBody(body);
 
         // check if the docid exists first:
 
@@ -72,11 +74,11 @@ public class CreateDocumentCallable extends DocumentsCallable<BasicDocumentRevis
         // if it does not exist:
         // * normal insert logic for a new document
 
-        InsertRevisionOptions options = new InsertRevisionOptions();
+        DocumentsCallable.InsertRevisionOptions options = new DocumentsCallable.InsertRevisionOptions();
         BasicDocumentRevision potentialParent = null;
 
         try {
-            potentialParent = this.getDocumentInQueue(db, docId, null, attachmentManager);
+            potentialParent = DocumentsCallable.getDocumentInQueue(db, docId, null, attachmentManager);
         } catch (DocumentNotFoundException e) {
             //this is an expected exception, it just means we are
             // resurrecting the document
@@ -89,13 +91,13 @@ public class CreateDocumentCallable extends DocumentsCallable<BasicDocumentRevis
                         , docId));
             }
             // if we got here, parent rev was deleted
-            this.setCurrent(db, potentialParent, false);
+            DocumentsCallable.setCurrent(db, potentialParent, false);
             options.revId = CouchUtils.generateNextRevisionId(potentialParent.getRevision());
             options.docNumericId = potentialParent.getInternalNumericId();
             options.parentSequence = potentialParent.getSequence();
         } else {
             // otherwise we are doing a normal create document
-            long docNumericId = insertDocumentID(db, docId);
+            long docNumericId = DocumentsCallable.insertDocumentID(db, docId);
             options.revId = CouchUtils.getFirstRevisionId();
             options.docNumericId = docNumericId;
             options.parentSequence = -1l;
@@ -104,10 +106,11 @@ public class CreateDocumentCallable extends DocumentsCallable<BasicDocumentRevis
         options.current = true;
         options.data = body.asBytes();
         options.available = true;
-        insertRevision(db, options);
+        DocumentsCallable.insertRevision(db, options);
 
         try {
-            BasicDocumentRevision doc = getDocumentInQueue(db, docId, options.revId, attachmentManager);
+            BasicDocumentRevision doc = DocumentsCallable.getDocumentInQueue(db, docId, options
+                    .revId, attachmentManager);
             logger.finer("New document created: " + doc.toString());
             return doc;
         } catch (DocumentNotFoundException e) {

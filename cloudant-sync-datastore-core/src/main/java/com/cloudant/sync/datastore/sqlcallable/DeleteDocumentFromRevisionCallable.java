@@ -14,24 +14,27 @@
 
 package com.cloudant.sync.datastore.sqlcallable;
 
+import com.cloudant.sync.datastore.Attachment;
 import com.cloudant.sync.datastore.BasicDocumentRevision;
 import com.cloudant.sync.sqlite.SQLDatabase;
+import com.cloudant.sync.sqlite.SQLQueueCallable;
 
 /**
  * Callable to delete document with given revision
  */
-public class DeleteDocumentFromRevisionCallable extends DocumentsCallable
-            <BasicDocumentRevision> {
+public class DeleteDocumentFromRevisionCallable extends SQLQueueCallable<BasicDocumentRevision> {
     private final BasicDocumentRevision rev;
+    private final AttachmentManager attachmentManager;
 
     public DeleteDocumentFromRevisionCallable(BasicDocumentRevision rev, AttachmentManager
             attachmentManager) {
-        super(attachmentManager);
         this.rev = rev;
+        this.attachmentManager = attachmentManager;
     }
 
     @Override
     public BasicDocumentRevision call(SQLDatabase db) throws Exception {
-        return deleteDocumentInQueue(db, rev.getId(), rev.getRevision(), attachmentManager);
+        return DocumentsCallable.deleteDocumentInQueue(db, rev.getId(), rev.getRevision(),
+                attachmentManager);
     }
 }

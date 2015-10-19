@@ -22,6 +22,7 @@ import com.cloudant.sync.datastore.DocumentBody;
 import com.cloudant.sync.datastore.DocumentNotFoundException;
 import com.cloudant.sync.datastore.MutableDocumentRevision;
 import com.cloudant.sync.sqlite.SQLDatabase;
+import com.cloudant.sync.sqlite.SQLQueueCallable;
 import com.cloudant.sync.util.CouchUtils;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
@@ -29,16 +30,17 @@ import com.google.common.base.Strings;
 /**
  * Created by mike on 17/10/2015.
  */
-public class UpdateDocumentCallable extends DocumentsCallable<BasicDocumentRevision> {
+public class UpdateDocumentCallable extends SQLQueueCallable<BasicDocumentRevision> {
     private final MutableDocumentRevision rev;
     private final AttachmentManager.PreparedAndSavedAttachments preparedAndSavedAttachments;
+    private final AttachmentManager attachmentManager;
 
     public UpdateDocumentCallable(MutableDocumentRevision rev, AttachmentManager
             .PreparedAndSavedAttachments preparedAndSavedAttachments, AttachmentManager
             attachmentManager) {
-        super(attachmentManager);
         this.rev = rev;
         this.preparedAndSavedAttachments = preparedAndSavedAttachments;
+        this.attachmentManager = attachmentManager;
     }
 
     @Override
@@ -57,7 +59,7 @@ public class UpdateDocumentCallable extends DocumentsCallable<BasicDocumentRevis
         // set attachments
         this.attachmentManager.setAttachments(db, updated, preparedAndSavedAttachments);
         // now re-fetch the revision with updated attachments
-        BasicDocumentRevision updatedWithAttachments = this.getDocumentInQueue(db,
+        BasicDocumentRevision updatedWithAttachments = DocumentsCallable.getDocumentInQueue(db,
                 updated.getId(), updated.getRevision(), attachmentManager);
         return updatedWithAttachments;
     }
@@ -74,20 +76,22 @@ public class UpdateDocumentCallable extends DocumentsCallable<BasicDocumentRevis
                 "Input previous revision id can not be empty");
         Preconditions.checkNotNull(body, "Input document body can not be null");
         if (validateBody) {
-            validateDBBody(body);
+            DocumentsCallable.validateDBBody(body);
         }
         CouchUtils.validateRevisionId(prevRevId);
 
-        BasicDocumentRevision preRevision = this.getDocumentInQueue(db, docId, prevRevId,
+        BasicDocumentRevision preRevision = DocumentsCallable.getDocumentInQueue(db, docId,
+                prevRevId,
                 attachmentManager);
 
         if (!preRevision.isCurrent()) {
             throw new ConflictException("Revision to be updated is not current revision.");
         }
 
-        setCurrent(db, preRevision, false);
+        DocumentsCallable.setCurrent(db, preRevision, false);
         String newRevisionId = insertNewWinnerRevision(db, body, preRevision, copyAttachments);
-        return this.getDocumentInQueue(db, preRevision.getId(), newRevisionId, attachmentManager);
+        return DocumentsCallable.getDocumentInQueue(db, preRevision.getId(), newRevisionId,
+                attachmentManager);
     }
 
     private String insertNewWinnerRevision(SQLDatabase db, DocumentBody newWinner,
@@ -108,14 +112,14 @@ public class UpdateDocumentCallable extends DocumentsCallable<BasicDocumentRevis
         if (copyAttachments) {
             this.insertRevisionAndCopyAttachments(db, options);
         } else {
-            this.insertRevision(db, options);
+            DocumentsCallable.insertRevision(db, options);
         }
 
         return newRevisionId;
     }
 
     private long insertRevisionAndCopyAttachments(SQLDatabase db, DocumentsCallable.InsertRevisionOptions options) throws AttachmentException, DatastoreException {
-        long newSequence = insertRevision(db, options);
+        long newSequence = DocumentsCallable.insertRevision(db, options);
         //always copy attachments
         this.attachmentManager.copyAttachments(db, options.parentSequence, newSequence);
         // inserted revision and copied attachments, so we are done

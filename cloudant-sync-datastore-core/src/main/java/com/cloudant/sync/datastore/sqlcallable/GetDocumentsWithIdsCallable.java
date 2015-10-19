@@ -16,6 +16,7 @@ package com.cloudant.sync.datastore.sqlcallable;
 
 import com.cloudant.sync.datastore.BasicDocumentRevision;
 import com.cloudant.sync.sqlite.SQLDatabase;
+import com.cloudant.sync.sqlite.SQLQueueCallable;
 import com.cloudant.sync.util.DatabaseUtils;
 
 import java.util.ArrayList;
@@ -27,23 +28,26 @@ import java.util.logging.Logger;
 /**
  * Created by mike on 17/10/2015.
  */
-public class GetDocumentsWithIdsCallable extends DocumentsCallable<List<BasicDocumentRevision
+public class GetDocumentsWithIdsCallable extends SQLQueueCallable<List<BasicDocumentRevision
         >> {
     private final List<String> docIds;
+    private final AttachmentManager attachmentManager;
     private final Logger logger = Logger.getLogger(GetDocumentsWithIdsCallable.class.getCanonicalName());
 
     public GetDocumentsWithIdsCallable(List<String> docIds, AttachmentManager attachmentManager) {
-        super(attachmentManager);
         this.docIds = docIds;
+        this.attachmentManager = attachmentManager;
     }
 
     @Override
     public List<BasicDocumentRevision> call(SQLDatabase db) throws Exception {
-        String sql = String.format("SELECT " + FULL_DOCUMENT_COLS + " FROM revs, docs" +
+        String sql = String.format("SELECT " + DocumentsCallable.FULL_DOCUMENT_COLS +
+                " FROM revs, docs" +
                 " WHERE docid IN ( %1$s ) AND current = 1 AND docs.doc_id = revs.doc_id " +
                 " ORDER BY docs.doc_id ", DatabaseUtils.makePlaceholders(docIds.size()));
         String[] args = docIds.toArray(new String[docIds.size()]);
-        List<BasicDocumentRevision> docs = getRevisionsFromRawQuery(db, sql, args, attachmentManager);
+        List<BasicDocumentRevision> docs = DocumentsCallable.getRevisionsFromRawQuery(db, sql,
+                args, attachmentManager);
         // Sort in memory since seems not able to sort them using SQL
         return sortDocumentsAccordingToIdList(docIds, docs);
     }
