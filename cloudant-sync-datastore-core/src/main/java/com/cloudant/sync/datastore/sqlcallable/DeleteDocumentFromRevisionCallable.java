@@ -32,6 +32,6 @@ public class DeleteDocumentFromRevisionCallable extends DocumentsCallable
 
     @Override
     public BasicDocumentRevision call(SQLDatabase db) throws Exception {
-        return deleteDocumentInQueue(db, rev.getId(), rev.getRevision());
+        return deleteDocumentInQueue(db, rev.getId(), rev.getRevision(), attachmentManager);
     }
 }

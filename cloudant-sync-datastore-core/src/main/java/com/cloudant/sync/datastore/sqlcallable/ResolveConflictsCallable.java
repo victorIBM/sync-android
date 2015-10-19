@@ -90,7 +90,7 @@ public class ResolveConflictsCallable extends DocumentsCallable<Object> {
                 } else {
                     // if it's not deleted, deleted and make it non-current
                     BasicDocumentRevision deleted = deleteDocumentInQueue(db,
-                            revision.getId(), revision.getRevision());
+                            revision.getId(), revision.getRevision(), attachmentManager);
                     setCurrent(db, deleted, false);
                 }
             }

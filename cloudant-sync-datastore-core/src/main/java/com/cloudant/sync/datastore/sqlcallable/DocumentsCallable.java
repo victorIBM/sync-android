@@ -154,8 +154,10 @@ public abstract class DocumentsCallable<T> extends SQLQueueCallable<T> {
         }
     }
 
-    BasicDocumentRevision deleteDocumentInQueue(SQLDatabase db, final String docId,
-                                                final String prevRevId) throws ConflictException, DocumentNotFoundException, DatastoreException {
+    static BasicDocumentRevision deleteDocumentInQueue(SQLDatabase db, final String docId,
+                                                final String prevRevId,
+                                                       AttachmentManager attachmentManager)
+            throws ConflictException, DocumentNotFoundException, DatastoreException {
         Preconditions.checkArgument(!Strings.isNullOrEmpty(docId),
                 "Input document id can not be empty");
         Preconditions.checkArgument(!Strings.isNullOrEmpty(prevRevId),
@@ -260,7 +262,7 @@ public abstract class DocumentsCallable<T> extends SQLQueueCallable<T> {
         return db.insert("docs", args);
     }
 
-    class InsertRevisionOptions {
+    static class InsertRevisionOptions {
         // doc_id in revs table
         public long docNumericId;
         public String revId;

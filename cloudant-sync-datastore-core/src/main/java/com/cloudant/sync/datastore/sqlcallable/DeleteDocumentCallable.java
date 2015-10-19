@@ -52,7 +52,7 @@ public class DeleteDocumentCallable extends DocumentsCallable<List<BasicDocument
             cursor = db.rawQuery(sql, new String[]{id});
             while (cursor.moveToNext()) {
                 String revId = cursor.getString(0);
-                deleted.add(deleteDocumentInQueue(db, id, revId));
+                deleted.add(deleteDocumentInQueue(db, id, revId, attachmentManager));
             }
             return deleted;
         } catch (SQLException sqe) {
