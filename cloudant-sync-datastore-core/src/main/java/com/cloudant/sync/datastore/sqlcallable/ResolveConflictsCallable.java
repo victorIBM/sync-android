@@ -42,7 +42,8 @@ public class ResolveConflictsCallable extends DocumentsCallable<Object> {
 
     @Override
     public Object call(SQLDatabase db) throws Exception {
-        DocumentRevisionTree docTree = getAllRevisionsOfDocumentInQueue(db, docId);
+        DocumentRevisionTree docTree =
+                new AllRevisionsOfDocumentCallable(docId, attachmentManager).call(db);
         if (!docTree.hasConflicts()) {
             return null;
         }

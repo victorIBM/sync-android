@@ -104,7 +104,7 @@ public abstract class DocumentsCallable<T> extends SQLQueueCallable<T> {
         return result;
     }
 
-    private static BasicDocumentRevision getFullRevisionFromCurrentCursor(Cursor cursor,
+    static BasicDocumentRevision getFullRevisionFromCurrentCursor(Cursor cursor,
                                                                           List<? extends Attachment> attachments) {
         String docId = cursor.getString(cursor.getColumnIndex("docid"));
         long internalId = cursor.getLong(cursor.getColumnIndex("doc_id"));
@@ -214,9 +214,9 @@ public abstract class DocumentsCallable<T> extends SQLQueueCallable<T> {
 
         DocumentRevisionTree revisionTree;
         try {
-            revisionTree = getAllRevisionsOfDocumentInQueue(db, docId);
-        } catch (AttachmentException e) {
-            // we can't get load the document, due to an attachment error,
+            revisionTree = new AllRevisionsOfDocumentCallable(docId, attachmentManager).call(db);
+        } catch (Exception e) {
+            // We can't load the document for another reason, so
             // throw an exception saying we couldn't find the document.
             throw new DocumentNotFoundException(e);
         }
@@ -301,34 +301,6 @@ public abstract class DocumentsCallable<T> extends SQLQueueCallable<T> {
         this.attachmentManager.copyAttachments(db, options.parentSequence, newSequence);
         // inserted revision and copied attachments, so we are done
         return newSequence;
-    }
-
-    DocumentRevisionTree getAllRevisionsOfDocumentInQueue(SQLDatabase db, String docId)
-            throws DocumentNotFoundException, AttachmentException, DatastoreException {
-        String sql = "SELECT " + FULL_DOCUMENT_COLS + " FROM revs, docs " +
-                "WHERE docs.docid=? AND revs.doc_id = docs.doc_id ORDER BY sequence ASC";
-
-        String[] args = {docId};
-        Cursor cursor = null;
-
-        try {
-            DocumentRevisionTree tree = new DocumentRevisionTree();
-            cursor = db.rawQuery(sql, args);
-            while (cursor.moveToNext()) {
-                long sequence = cursor.getLong(3);
-                List<? extends Attachment> atts = attachmentManager.attachmentsForRevision(db, sequence);
-                BasicDocumentRevision rev = getFullRevisionFromCurrentCursor(cursor, atts);
-                logger.finer("Rev: " + rev);
-                tree.add(rev);
-            }
-            return tree;
-        } catch (SQLException e) {
-            logger.log(Level.SEVERE, "Error getting all revisions of document", e);
-            throw new DatastoreException("DocumentRevisionTree not found with id: " + docId, e);
-        } finally {
-            DatabaseUtils.closeCursorQuietly(cursor);
-        }
-
     }
 
     long insertRevision(SQLDatabase db, DocumentsCallable.InsertRevisionOptions options) {

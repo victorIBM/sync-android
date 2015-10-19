@@ -14,13 +14,27 @@
 
 package com.cloudant.sync.datastore.sqlcallable;
 
+import com.cloudant.sync.datastore.Attachment;
+import com.cloudant.sync.datastore.AttachmentException;
+import com.cloudant.sync.datastore.BasicDocumentRevision;
+import com.cloudant.sync.datastore.DatastoreException;
+import com.cloudant.sync.datastore.DocumentNotFoundException;
 import com.cloudant.sync.datastore.DocumentRevisionTree;
+import com.cloudant.sync.sqlite.Cursor;
 import com.cloudant.sync.sqlite.SQLDatabase;
+import com.cloudant.sync.util.DatabaseUtils;
+
+import java.sql.SQLException;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Created by mike on 17/10/2015.
  */
 public class AllRevisionsOfDocumentCallable extends DocumentsCallable<DocumentRevisionTree> {
+
+    private static final Logger logger = Logger.getLogger(AllRevisionsOfDocumentCallable.class.getCanonicalName());
     private final String docId;
 
     public AllRevisionsOfDocumentCallable(String docId, AttachmentManager attachmentManager) {
@@ -30,8 +44,35 @@ public class AllRevisionsOfDocumentCallable extends DocumentsCallable<DocumentRe
 
     @Override
     public DocumentRevisionTree call(SQLDatabase db) throws Exception {
-
         return getAllRevisionsOfDocumentInQueue(db, docId);
+    }
+
+    private DocumentRevisionTree getAllRevisionsOfDocumentInQueue(SQLDatabase db, String docId)
+            throws DocumentNotFoundException, AttachmentException, DatastoreException {
+        String sql = "SELECT " + FULL_DOCUMENT_COLS + " FROM revs, docs " +
+                "WHERE docs.docid=? AND revs.doc_id = docs.doc_id ORDER BY sequence ASC";
+
+        String[] args = {docId};
+        Cursor cursor = null;
+
+        try {
+            DocumentRevisionTree tree = new DocumentRevisionTree();
+            cursor = db.rawQuery(sql, args);
+            while (cursor.moveToNext()) {
+                long sequence = cursor.getLong(3);
+                List<? extends Attachment> atts = attachmentManager.attachmentsForRevision(db, sequence);
+                BasicDocumentRevision rev = getFullRevisionFromCurrentCursor(cursor, atts);
+                logger.finer("Rev: " + rev);
+                tree.add(rev);
+            }
+            return tree;
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Error getting all revisions of document", e);
+            throw new DatastoreException("DocumentRevisionTree not found with id: " + docId, e);
+        } finally {
+            DatabaseUtils.closeCursorQuietly(cursor);
+        }
+
     }
 
 }

@@ -222,10 +222,11 @@ public class ForceInsertCallable extends DocumentsCallable<Object> {
 
         DocumentRevisionTree localRevs;
         try {
-            localRevs = getAllRevisionsOfDocumentInQueue(db, newRevision.getId());
-        } catch (DocumentNotFoundException e) {
-            //this shouldn't be thrown since from the checkArugment above call we know the document
-            //exists so it should have a revision history
+            localRevs = new AllRevisionsOfDocumentCallable(newRevision.getId(), attachmentManager)
+                    .call(db);
+        } catch (Exception e) {
+            // We can't load the document for another reason, so
+            // throw an exception saying we couldn't find the document.
             throw new RuntimeException(String.format("Error getting all revisions of document" +
                     " with id %s even though revision exists", newRevision.getId()), e);
         }
