@@ -33,7 +33,7 @@ public class Changes {
 
     private final List<BasicDocumentRevision> results;
 
-    protected Changes(long lastSequence, List<BasicDocumentRevision> results) {
+    public Changes(long lastSequence, List<BasicDocumentRevision> results) {
         Preconditions.checkNotNull(results, "Changes results must not be null.");
         this.lastSequence = lastSequence;
         this.results = results;

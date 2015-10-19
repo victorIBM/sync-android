@@ -12,7 +12,7 @@
  * and limitations under the License.
  */
 
-package com.cloudant.sync.datastore;
+package com.cloudant.sync.datastore.sqlcallable;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
@@ -23,6 +23,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.cloudant.sync.datastore.AttachmentException;
+import com.cloudant.sync.datastore.sqlcallable.AttachmentManager;
 import com.cloudant.sync.sqlite.ContentValues;
 import com.cloudant.sync.sqlite.Cursor;
 import com.cloudant.sync.sqlite.SQLDatabase;
@@ -57,7 +59,8 @@ public class AttachmentManagerTest {
         File expected = new File("blah", my_filename);
 
         // Test both true/false pathways (name should be retrieved each time, regardless)
-        Assert.assertEquals(expected, AttachmentManager.fileFromKey(db, new byte[]{-1, 23}, "blah", true));
+        Assert.assertEquals(expected, AttachmentManager.fileFromKey(db, new byte[]{-1, 23},
+                "blah", true));
         Assert.assertEquals(expected, AttachmentManager.fileFromKey(db, new byte[]{-1, 23}, "blah", false));
 
     }

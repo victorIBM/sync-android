@@ -12,8 +12,17 @@
  * and limitations under the License.
  */
 
-package com.cloudant.sync.datastore;
+package com.cloudant.sync.datastore.sqlcallable;
 
+import com.cloudant.sync.datastore.Attachment;
+import com.cloudant.sync.datastore.AttachmentException;
+import com.cloudant.sync.datastore.AttachmentNotSavedException;
+import com.cloudant.sync.datastore.AttachmentStreamFactory;
+import com.cloudant.sync.datastore.BasicDocumentRevision;
+import com.cloudant.sync.datastore.Datastore;
+import com.cloudant.sync.datastore.DatastoreException;
+import com.cloudant.sync.datastore.PreparedAttachment;
+import com.cloudant.sync.datastore.SavedAttachment;
 import com.cloudant.sync.sqlite.ContentValues;
 import com.cloudant.sync.sqlite.Cursor;
 import com.cloudant.sync.sqlite.SQLDatabase;
@@ -45,7 +54,7 @@ import java.util.logging.Logger;
  *
  * Attachments are stored on disk in an extension directory, {@code EXTENSION_NAME}.
  */
-class AttachmentManager {
+public class AttachmentManager {
 
     private static final String EXTENSION_NAME = "com.cloudant.attachments";
     private static final Logger logger = Logger.getLogger(AttachmentManager.class.getCanonicalName());
@@ -98,12 +107,12 @@ class AttachmentManager {
 
     private final AttachmentStreamFactory attachmentStreamFactory;
 
-    public AttachmentManager(BasicDatastore datastore) {
+    public AttachmentManager(Datastore datastore) {
         this.attachmentsDir = datastore.extensionDataFolder(EXTENSION_NAME);
         this.attachmentStreamFactory = new AttachmentStreamFactory(datastore.getKeyProvider());
     }
 
-    public void addAttachment(SQLDatabase db, PreparedAttachment a, BasicDocumentRevision rev) throws  AttachmentNotSavedException {
+    public void addAttachment(SQLDatabase db, PreparedAttachment a, BasicDocumentRevision rev) throws AttachmentNotSavedException {
 
         // do it this way to only go thru inputstream once
         // * write to temp location using copyinputstreamtofile
@@ -179,7 +188,7 @@ class AttachmentManager {
 
     }
 
-    class PreparedAndSavedAttachments
+    public class PreparedAndSavedAttachments
     {
         List<SavedAttachment> savedAttachments = new ArrayList<SavedAttachment>();
         List<PreparedAttachment> preparedAttachments = new ArrayList<PreparedAttachment>();
@@ -205,7 +214,7 @@ class AttachmentManager {
     }
 
     // prepare an attachment and check validity of length and encodedLength metadata
-    protected PreparedAttachment prepareAttachment(Attachment attachment, long length, long encodedLength) throws AttachmentException {
+    public PreparedAttachment prepareAttachment(Attachment attachment, long length, long encodedLength) throws AttachmentException {
         PreparedAttachment pa = new PreparedAttachment(attachment, this.attachmentsDir, length, attachmentStreamFactory);
         // check the length on disk is correct:
         // - plain encoding, length on disk is signalled by the "length" metadata property
@@ -226,7 +235,7 @@ class AttachmentManager {
     // * if attachment is saved, add it to the saved list
     // * if attachment is not saved, prepare it, and add it to the prepared list
     // this way, the attachments are sifted through ready to be added in the database for a given revision
-    protected PreparedAndSavedAttachments prepareAttachments(Collection<? extends Attachment> attachments) throws AttachmentException {
+    public PreparedAndSavedAttachments prepareAttachments(Collection<? extends Attachment> attachments) throws AttachmentException {
         // actually a list of prepared or saved attachments
         PreparedAndSavedAttachments preparedAndSavedAttachments = new PreparedAndSavedAttachments();
 
@@ -266,7 +275,7 @@ class AttachmentManager {
             for (SavedAttachment a : preparedAndSavedAttachments.savedAttachments) {
                 // go thru existing (from previous rev) and new (from another document) saved attachments
                 // and add them (the effect on existing attachments is to copy them forward to this revision)
-                long parentSequence = a.seq;
+                long parentSequence = a.getSeq();
                 long newSequence = rev.getSequence();
                 this.copyAttachment(db,parentSequence, newSequence, a.name);
             }

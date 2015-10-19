@@ -31,7 +31,7 @@ import java.util.zip.GZIPInputStream;
 /**
  * An Attachment which has been retrieved from the Database
  */
-class SavedAttachment extends Attachment {
+public class SavedAttachment extends Attachment {
 
     // how many bytes should an attachment be to be considered large?
     static final int largeSizeBytes = 65536;
@@ -49,7 +49,7 @@ class SavedAttachment extends Attachment {
             "WHERE filename = ? and sequence = ?";
 
     // these properties come directly from the database
-    protected final long seq;
+    private final long seq;
     protected final byte[] key;  // sha of file, used for file path on disk.
     protected final long length;
     protected final long encodedLength;
@@ -58,7 +58,7 @@ class SavedAttachment extends Attachment {
     private final File file;
     private final AttachmentStreamFactory attachmentStreamFactory;
 
-    protected SavedAttachment(long seq, String name, byte[] key, String type, Encoding encoding,
+    public SavedAttachment(long seq, String name, byte[] key, String type, Encoding encoding,
                               long length, long encodedLength, long revpos, File file,
                               AttachmentStreamFactory asf) {
         super(name, type, encoding);
@@ -97,5 +97,9 @@ class SavedAttachment extends Attachment {
     // note that this may be different from file.length() due to encryption
     public long onDiskLength() {
         return encoding == Encoding.Plain ? length : encodedLength;
+    }
+
+    public long getSeq() {
+        return seq;
     }
 }

@@ -452,7 +452,7 @@ public class DocumentRevisionTree {
      *
      * @return  the internal numeric ID of this document.
      */
-    protected long getDocumentNumericId() {
+    public long getDocumentNumericId() {
         return documentNumericId;
     }
 
