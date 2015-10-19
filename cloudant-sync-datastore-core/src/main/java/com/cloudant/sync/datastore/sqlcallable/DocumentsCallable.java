@@ -69,7 +69,9 @@ public abstract class DocumentsCallable<T> extends SQLQueueCallable<T> {
             "SELECT " + FULL_DOCUMENT_COLS + " FROM revs, docs WHERE docs.docid=? AND revs.doc_id=docs.doc_id " +
                     "AND revid=? LIMIT 1";
 
-    List<BasicDocumentRevision> getRevisionsFromRawQuery(SQLDatabase db, String sql, String[] args)
+   static List<BasicDocumentRevision> getRevisionsFromRawQuery(SQLDatabase db, String sql,
+                                                               String[] args,
+                                                               AttachmentManager attachmentManager)
             throws DocumentNotFoundException, AttachmentException, DocumentException, DatastoreException {
         List<BasicDocumentRevision> result = new ArrayList<BasicDocumentRevision>();
         Cursor cursor = null;

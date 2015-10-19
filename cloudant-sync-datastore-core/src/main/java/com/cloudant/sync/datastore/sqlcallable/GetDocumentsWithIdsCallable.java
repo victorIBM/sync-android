@@ -43,7 +43,7 @@ public class GetDocumentsWithIdsCallable extends DocumentsCallable<List<BasicDoc
                 " WHERE docid IN ( %1$s ) AND current = 1 AND docs.doc_id = revs.doc_id " +
                 " ORDER BY docs.doc_id ", DatabaseUtils.makePlaceholders(docIds.size()));
         String[] args = docIds.toArray(new String[docIds.size()]);
-        List<BasicDocumentRevision> docs = getRevisionsFromRawQuery(db, sql, args);
+        List<BasicDocumentRevision> docs = getRevisionsFromRawQuery(db, sql, args, attachmentManager);
         // Sort in memory since seems not able to sort them using SQL
         return sortDocumentsAccordingToIdList(docIds, docs);
     }

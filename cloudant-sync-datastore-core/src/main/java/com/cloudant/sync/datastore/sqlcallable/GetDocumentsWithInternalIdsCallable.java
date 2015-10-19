@@ -73,7 +73,7 @@ public class GetDocumentsWithInternalIdsCallable extends DocumentsCallable<List<
             for (int i = 0; i < batch.size(); i++) {
                 args[i] = Long.toString(batch.get(i));
             }
-            result.addAll(getRevisionsFromRawQuery(db, sql, args));
+            result.addAll(getRevisionsFromRawQuery(db, sql, args, attachmentManager));
         }
 
         // Contract is to sort by sequence number, which we need to do

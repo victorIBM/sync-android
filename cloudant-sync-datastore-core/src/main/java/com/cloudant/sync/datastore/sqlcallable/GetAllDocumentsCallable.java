@@ -42,6 +42,6 @@ public class GetAllDocumentsCallable extends DocumentsCallable<List<BasicDocumen
                         "WHERE deleted = 0 AND current = 1 AND docs.doc_id = revs.doc_id " +
                         "ORDER BY docs.doc_id %1$s, revid DESC LIMIT %2$s OFFSET %3$s ",
                 (descending ? "DESC" : "ASC"), limit, offset);
-        return getRevisionsFromRawQuery(db, sql, new String[]{});
+        return getRevisionsFromRawQuery(db, sql, new String[]{}, attachmentManager);
     }
 }
