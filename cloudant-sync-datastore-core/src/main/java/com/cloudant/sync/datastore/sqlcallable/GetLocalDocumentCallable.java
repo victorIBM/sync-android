@@ -14,6 +14,7 @@
 
 package com.cloudant.sync.datastore.sqlcallable;
 
+import com.cloudant.sync.datastore.BasicDocumentBody;
 import com.cloudant.sync.datastore.DatastoreException;
 import com.cloudant.sync.datastore.DocumentException;
 import com.cloudant.sync.datastore.DocumentNotFoundException;
@@ -31,7 +32,10 @@ import java.util.logging.Logger;
 /**
  * Created by mike on 17/10/2015.
  */
-public class GetLocalDocumentCallable extends LocalDocumentsCallable {
+public class GetLocalDocumentCallable extends SQLQueueCallable<LocalDocument> {
+
+    private static final Logger logger = Logger.getLogger(GetLocalDocumentCallable.class.getCanonicalName());
+
     private final String docId;
 
     public GetLocalDocumentCallable(String docId) {
@@ -41,5 +45,27 @@ public class GetLocalDocumentCallable extends LocalDocumentsCallable {
     @Override
     public LocalDocument call(SQLDatabase db) throws Exception {
         return doGetLocalDocument(db, docId);
+    }
+
+    static LocalDocument doGetLocalDocument(SQLDatabase db, String docId)
+            throws DocumentNotFoundException, DocumentException, DatastoreException {
+        assert !Strings.isNullOrEmpty(docId);
+        Cursor cursor = null;
+        try {
+            String[] args = {docId};
+            cursor = db.rawQuery("SELECT json FROM localdocs WHERE docid=?", args);
+            if (cursor.moveToFirst()) {
+                byte[] json = cursor.getBlob(0);
+
+                return new LocalDocument(docId, BasicDocumentBody.bodyWith(json));
+            } else {
+                throw new DocumentNotFoundException(String.format("No local document found with id: %s", docId));
+            }
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, String.format("Error getting local document with id: %s", docId), e);
+            throw new DatastoreException("Error getting local document with id: " + docId, e);
+        } finally {
+            DatabaseUtils.closeCursorQuietly(cursor);
+        }
     }
 }

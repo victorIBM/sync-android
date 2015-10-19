@@ -33,7 +33,7 @@ import java.util.logging.Logger;
 /**
  * Created by mike on 17/10/2015.
  */
-public class InsertLocalDocumentCallable extends LocalDocumentsCallable {
+public class InsertLocalDocumentCallable extends SQLQueueCallable<LocalDocument> {
     private final String docId;
     private final DocumentBody body;
     private final Logger logger = Logger.getLogger(InsertLocalDocumentCallable.class.getCanonicalName());
@@ -57,6 +57,6 @@ public class InsertLocalDocumentCallable extends LocalDocumentsCallable {
             logger.finer(String.format("Local doc inserted: %d , %s", rowId, docId));
         }
 
-        return doGetLocalDocument(db, docId);
+        return new GetLocalDocumentCallable(docId).call(db);
     }
 }
