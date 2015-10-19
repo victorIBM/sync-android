@@ -14,7 +14,6 @@
 
 package com.cloudant.sync.datastore.sqlcallable;
 
-import com.cloudant.sync.datastore.Attachment;
 import com.cloudant.sync.datastore.BasicDocumentRevision;
 import com.cloudant.sync.sqlite.SQLDatabase;
 import com.cloudant.sync.sqlite.SQLQueueCallable;
@@ -34,7 +33,7 @@ public class DeleteDocumentFromRevisionCallable extends SQLQueueCallable<BasicDo
 
     @Override
     public BasicDocumentRevision call(SQLDatabase db) throws Exception {
-        return DocumentsCallable.deleteDocumentInQueue(db, rev.getId(), rev.getRevision(),
+        return SqlDocumentUtils.deleteDocumentInQueue(db, rev.getId(), rev.getRevision(),
                 attachmentManager);
     }
 }

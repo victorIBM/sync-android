@@ -55,7 +55,7 @@ public class CreateDocumentCallable extends SQLQueueCallable<BasicDocumentRevisi
         // set attachments
         attachmentManager.setAttachments(db, saved, preparedAndSavedAttachments);
         // now re-fetch the revision with updated attachments
-        BasicDocumentRevision updatedWithAttachments = DocumentsCallable.getDocumentInQueue(db,
+        BasicDocumentRevision updatedWithAttachments = SqlDocumentUtils.getDocumentInQueue(db,
                 saved.getId(), saved.getRevision(), attachmentManager);
         return updatedWithAttachments;
     }
@@ -64,7 +64,7 @@ public class CreateDocumentCallable extends SQLQueueCallable<BasicDocumentRevisi
             throws AttachmentException, ConflictException, DatastoreException {
         CouchUtils.validateDocumentId(docId);
         Preconditions.checkNotNull(body, "Input document body can not be null");
-        DocumentsCallable.validateDBBody(body);
+        SqlDocumentUtils.validateDBBody(body);
 
         // check if the docid exists first:
 
@@ -74,11 +74,12 @@ public class CreateDocumentCallable extends SQLQueueCallable<BasicDocumentRevisi
         // if it does not exist:
         // * normal insert logic for a new document
 
-        DocumentsCallable.InsertRevisionOptions options = new DocumentsCallable.InsertRevisionOptions();
+        SqlDocumentUtils.InsertRevisionOptions options = new SqlDocumentUtils.InsertRevisionOptions();
         BasicDocumentRevision potentialParent = null;
 
         try {
-            potentialParent = DocumentsCallable.getDocumentInQueue(db, docId, null, attachmentManager);
+            potentialParent = SqlDocumentUtils.getDocumentInQueue(db, docId, null,
+                    attachmentManager);
         } catch (DocumentNotFoundException e) {
             //this is an expected exception, it just means we are
             // resurrecting the document
@@ -91,13 +92,13 @@ public class CreateDocumentCallable extends SQLQueueCallable<BasicDocumentRevisi
                         , docId));
             }
             // if we got here, parent rev was deleted
-            DocumentsCallable.setCurrent(db, potentialParent, false);
+            SqlDocumentUtils.setCurrent(db, potentialParent, false);
             options.revId = CouchUtils.generateNextRevisionId(potentialParent.getRevision());
             options.docNumericId = potentialParent.getInternalNumericId();
             options.parentSequence = potentialParent.getSequence();
         } else {
             // otherwise we are doing a normal create document
-            long docNumericId = DocumentsCallable.insertDocumentID(db, docId);
+            long docNumericId = SqlDocumentUtils.insertDocumentID(db, docId);
             options.revId = CouchUtils.getFirstRevisionId();
             options.docNumericId = docNumericId;
             options.parentSequence = -1l;
@@ -106,10 +107,10 @@ public class CreateDocumentCallable extends SQLQueueCallable<BasicDocumentRevisi
         options.current = true;
         options.data = body.asBytes();
         options.available = true;
-        DocumentsCallable.insertRevision(db, options);
+        SqlDocumentUtils.insertRevision(db, options);
 
         try {
-            BasicDocumentRevision doc = DocumentsCallable.getDocumentInQueue(db, docId, options
+            BasicDocumentRevision doc = SqlDocumentUtils.getDocumentInQueue(db, docId, options
                     .revId, attachmentManager);
             logger.finer("New document created: " + doc.toString());
             return doc;

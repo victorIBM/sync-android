@@ -84,16 +84,16 @@ public class ResolveConflictsCallable extends SQLQueueCallable<Object> {
         for (BasicDocumentRevision revision : docTree.leafRevisions()) {
             if (revision.getRevision().equals(revIdKeep)) {
                 // this is the one we want to keep, set it to current
-                DocumentsCallable.setCurrent(db, revision, true);
+                SqlDocumentUtils.setCurrent(db, revision, true);
             } else {
                 if (revision.isDeleted()) {
                     // if it is deleted, just make it non-current
-                    DocumentsCallable.setCurrent(db, revision, false);
+                    SqlDocumentUtils.setCurrent(db, revision, false);
                 } else {
                     // if it's not deleted, deleted and make it non-current
-                    BasicDocumentRevision deleted = DocumentsCallable.deleteDocumentInQueue(db,
+                    BasicDocumentRevision deleted = SqlDocumentUtils.deleteDocumentInQueue(db,
                             revision.getId(), revision.getRevision(), attachmentManager);
-                    DocumentsCallable.setCurrent(db, deleted, false);
+                    SqlDocumentUtils.setCurrent(db, deleted, false);
                 }
             }
         }

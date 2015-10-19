@@ -14,7 +14,6 @@
 
 package com.cloudant.sync.datastore.sqlcallable;
 
-import com.cloudant.sync.datastore.Attachment;
 import com.cloudant.sync.datastore.BasicDocumentRevision;
 import com.cloudant.sync.sqlite.SQLDatabase;
 import com.cloudant.sync.sqlite.SQLQueueCallable;
@@ -41,12 +40,12 @@ public class GetAllDocumentsCallable extends SQLQueueCallable<List<BasicDocument
     @Override
     public List<BasicDocumentRevision> call(SQLDatabase db) throws Exception {
         // Generate the SELECT statement, based on the options:
-        String sql = String.format("SELECT " + DocumentsCallable.FULL_DOCUMENT_COLS+
+        String sql = String.format("SELECT " + SqlDocumentUtils.FULL_DOCUMENT_COLS+
                         " FROM revs, docs " +
                         "WHERE deleted = 0 AND current = 1 AND docs.doc_id = revs.doc_id " +
                         "ORDER BY docs.doc_id %1$s, revid DESC LIMIT %2$s OFFSET %3$s ",
                 (descending ? "DESC" : "ASC"), limit, offset);
-        return DocumentsCallable.getRevisionsFromRawQuery(db, sql, new String[]{},
+        return SqlDocumentUtils.getRevisionsFromRawQuery(db, sql, new String[]{},
                 attachmentManager);
     }
 }

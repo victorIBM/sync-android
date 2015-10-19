@@ -15,7 +15,6 @@
 package com.cloudant.sync.datastore.sqlcallable;
 
 import com.cloudant.android.Base64InputStreamFactory;
-import com.cloudant.sync.datastore.Attachment;
 import com.cloudant.sync.datastore.AttachmentException;
 import com.cloudant.sync.datastore.BasicDocumentRevision;
 import com.cloudant.sync.datastore.DatastoreException;
@@ -79,7 +78,7 @@ public class ForceInsertCallable extends SQLQueueCallable<Object> {
         // be wanted by subscribers
         BasicDocumentRevision revisionFromDB = null;
         try {
-            revisionFromDB = DocumentsCallable.getDocumentInQueue(db, rev.getId(), null,
+            revisionFromDB = SqlDocumentUtils.getDocumentInQueue(db, rev.getId(), null,
                     attachmentManager);
         } catch (DocumentNotFoundException e) {
             // this is expected since this method is normally used by replication
@@ -138,7 +137,7 @@ public class ForceInsertCallable extends SQLQueueCallable<Object> {
                         String id = key[0];
                         String rev = key[1];
                         try {
-                            BasicDocumentRevision doc = DocumentsCallable.getDocumentInQueue(db,
+                            BasicDocumentRevision doc = SqlDocumentUtils.getDocumentInQueue(db,
                                     id, rev, attachmentManager);
                             if (doc != null) {
                                 for (PreparedAttachment att : preparedAttachments.get
@@ -186,14 +185,14 @@ public class ForceInsertCallable extends SQLQueueCallable<Object> {
                 "doForceInsertNewDocumentWithHistory()",
                 new Object[]{rev, revHistory});
 
-        long docNumericID = DocumentsCallable.insertDocumentID(db, rev.getId());
+        long docNumericID = SqlDocumentUtils.insertDocumentID(db, rev.getId());
         long parentSequence = 0L;
         for (int i = 0; i < revHistory.size() - 1; i++) {
             // Insert stub node
             parentSequence = insertStubRevision(db, docNumericID, revHistory.get(i), parentSequence);
         }
         // Insert the leaf node (don't copy attachments)
-        DocumentsCallable.InsertRevisionOptions options = new DocumentsCallable.InsertRevisionOptions();
+        SqlDocumentUtils.InsertRevisionOptions options = new SqlDocumentUtils.InsertRevisionOptions();
         options.docNumericId = docNumericID;
         options.revId = revHistory.get(revHistory.size() - 1);
         options.parentSequence = parentSequence;
@@ -201,7 +200,7 @@ public class ForceInsertCallable extends SQLQueueCallable<Object> {
         options.current = true;
         options.data = rev.getBody().asBytes();
         options.available = true;
-        long sequence = DocumentsCallable.insertRevision(db, options);
+        long sequence = SqlDocumentUtils.insertRevision(db, options);
         return sequence;
     }
 
@@ -219,7 +218,7 @@ public class ForceInsertCallable extends SQLQueueCallable<Object> {
                 "doForceInsertExistingDocumentWithHistory",
                 new Object[]{newRevision, revisions, attachments});
         Preconditions.checkNotNull(newRevision, "New document revision must not be null.");
-        Preconditions.checkArgument(DocumentsCallable.getDocumentInQueue(db, newRevision.getId(),
+        Preconditions.checkArgument(SqlDocumentUtils.getDocumentInQueue(db, newRevision.getId(),
                 null,
                 attachmentManager) != null, "DocumentRevisionTree must exist.");
         Preconditions.checkNotNull(revisions, "Revision history should not be null.");
@@ -267,13 +266,13 @@ public class ForceInsertCallable extends SQLQueueCallable<Object> {
         for (int i = 0; i < revisions.size() - 1; i++) {
             //we copy attachments here so allow the exception to propagate
             parentSequence = insertStubRevision(db, docNumericID, revisions.get(i), parentSequence);
-            BasicDocumentRevision newNode = DocumentsCallable.getDocumentInQueue(db, newRevision
+            BasicDocumentRevision newNode = SqlDocumentUtils.getDocumentInQueue(db, newRevision
                             .getId(),
                     revisions.get(i), attachmentManager);
             localRevs.add(newNode);
         }
         // don't copy attachments
-        DocumentsCallable.InsertRevisionOptions options = new DocumentsCallable.InsertRevisionOptions();
+        SqlDocumentUtils.InsertRevisionOptions options = new SqlDocumentUtils.InsertRevisionOptions();
         options.docNumericId = docNumericID;
         options.revId = newRevision.getRevision();
         options.parentSequence = parentSequence;
@@ -281,8 +280,8 @@ public class ForceInsertCallable extends SQLQueueCallable<Object> {
         options.current = false; // we'll call pickWinnerOfConflicts to set this if it needs it
         options.data = newRevision.asBytes();
         options.available = !newRevision.isDeleted();
-        long sequence = DocumentsCallable.insertRevision(db, options);
-        BasicDocumentRevision newLeaf = DocumentsCallable.getDocumentInQueue(db, newRevision
+        long sequence = SqlDocumentUtils.insertRevision(db, options);
+        BasicDocumentRevision newLeaf = SqlDocumentUtils.getDocumentInQueue(db, newRevision
                         .getId(),
                 newRevision.getRevision(), attachmentManager);
         localRevs.add(newLeaf);
@@ -325,7 +324,7 @@ public class ForceInsertCallable extends SQLQueueCallable<Object> {
             logger.finer("Inserting new stub revision, id: " + docNumericID + ", rev: " + revisions.get(i));
             this.changeDocumentToBeNotCurrent(db, parent.getSequence());
             insertStubRevision(db, docNumericID, revisions.get(i), parent.getSequence());
-            parent = DocumentsCallable.getDocumentInQueue(db, newRevision.getId(), revisions.get
+            parent = SqlDocumentUtils.getDocumentInQueue(db, newRevision.getId(), revisions.get
                     (i), attachmentManager);
             localRevs.add(parent);
         }
@@ -335,7 +334,7 @@ public class ForceInsertCallable extends SQLQueueCallable<Object> {
         String newRevisionId = revisions.get(revisions.size() - 1);
         this.changeDocumentToBeNotCurrent(db, parent.getSequence());
         // don't copy over attachments
-        DocumentsCallable.InsertRevisionOptions options = new DocumentsCallable.InsertRevisionOptions();
+        SqlDocumentUtils.InsertRevisionOptions options = new SqlDocumentUtils.InsertRevisionOptions();
         options.docNumericId = docNumericID;
         options.revId = newRevisionId;
         options.parentSequence = parent.getSequence();
@@ -343,15 +342,15 @@ public class ForceInsertCallable extends SQLQueueCallable<Object> {
         options.current = false; // we'll call pickWinnerOfConflicts to set this if it needs it
         options.data = newRevision.asBytes();
         options.available = true;
-        long sequence = DocumentsCallable.insertRevision(db, options);
+        long sequence = SqlDocumentUtils.insertRevision(db, options);
 
-        BasicDocumentRevision newLeaf = DocumentsCallable.getDocumentInQueue(db, newRevision
+        BasicDocumentRevision newLeaf = SqlDocumentUtils.getDocumentInQueue(db, newRevision
                         .getId(), newRevisionId,
                 attachmentManager);
         localRevs.add(newLeaf);
 
         // Refresh previous leaf in case it is changed in sqlDb but not in memory
-        previousLeaf = DocumentsCallable.getDocumentInQueue(db, previousLeaf.getId(),
+        previousLeaf = SqlDocumentUtils.getDocumentInQueue(db, previousLeaf.getId(),
                 previousLeaf.getRevision(),
                 attachmentManager);
 
@@ -435,7 +434,7 @@ public class ForceInsertCallable extends SQLQueueCallable<Object> {
 
     private long insertStubRevision(SQLDatabase db, long docNumericId, String revId, long parentSequence) throws AttachmentException {
         // don't copy attachments
-        DocumentsCallable.InsertRevisionOptions options = new DocumentsCallable.InsertRevisionOptions();
+        SqlDocumentUtils.InsertRevisionOptions options = new SqlDocumentUtils.InsertRevisionOptions();
         options.docNumericId = docNumericId;
         options.revId = revId;
         options.parentSequence = parentSequence;
@@ -443,7 +442,7 @@ public class ForceInsertCallable extends SQLQueueCallable<Object> {
         options.current = false;
         options.data = JSONUtils.EMPTY_JSON;
         options.available = false;
-        return DocumentsCallable.insertRevision(db, options);
+        return SqlDocumentUtils.insertRevision(db, options);
     }
 
     private boolean checkCurrentRevisionIsInRevisionHistory(BasicDocumentRevision rev, List<String> revisionHistory) {

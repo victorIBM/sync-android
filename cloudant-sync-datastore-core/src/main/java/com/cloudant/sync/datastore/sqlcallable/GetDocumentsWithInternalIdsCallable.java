@@ -56,7 +56,7 @@ public class GetDocumentsWithInternalIdsCallable extends SQLQueueCallable<List<B
         }
 
         final String GET_DOCUMENTS_BY_INTERNAL_IDS = "SELECT " +
-                DocumentsCallable.FULL_DOCUMENT_COLS + " FROM revs, docs " +
+                SqlDocumentUtils.FULL_DOCUMENT_COLS + " FROM revs, docs " +
                 "WHERE revs.doc_id IN ( %s ) AND current = 1 AND docs.doc_id = revs.doc_id";
 
         // Split into batches because SQLite has a limit on the number
@@ -76,7 +76,7 @@ public class GetDocumentsWithInternalIdsCallable extends SQLQueueCallable<List<B
             for (int i = 0; i < batch.size(); i++) {
                 args[i] = Long.toString(batch.get(i));
             }
-            result.addAll(DocumentsCallable.getRevisionsFromRawQuery(db, sql, args,
+            result.addAll(SqlDocumentUtils.getRevisionsFromRawQuery(db, sql, args,
                     attachmentManager));
         }
 

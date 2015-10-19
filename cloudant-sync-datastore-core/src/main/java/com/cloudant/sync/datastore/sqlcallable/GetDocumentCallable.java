@@ -34,6 +34,6 @@ public class GetDocumentCallable extends SQLQueueCallable<BasicDocumentRevision>
 
     @Override
     public BasicDocumentRevision call(SQLDatabase db) throws Exception {
-        return DocumentsCallable.getDocumentInQueue(db, id, rev, attachmentManager);
+        return SqlDocumentUtils.getDocumentInQueue(db, id, rev, attachmentManager);
     }
 }

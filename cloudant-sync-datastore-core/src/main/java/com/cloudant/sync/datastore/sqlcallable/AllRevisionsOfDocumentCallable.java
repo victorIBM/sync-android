@@ -51,7 +51,7 @@ public class AllRevisionsOfDocumentCallable extends SQLQueueCallable<DocumentRev
 
     private DocumentRevisionTree getAllRevisionsOfDocumentInQueue(SQLDatabase db, String docId)
             throws DocumentNotFoundException, AttachmentException, DatastoreException {
-        String sql = "SELECT " + DocumentsCallable.FULL_DOCUMENT_COLS + " FROM revs, docs " +
+        String sql = "SELECT " + SqlDocumentUtils.FULL_DOCUMENT_COLS + " FROM revs, docs " +
                 "WHERE docs.docid=? AND revs.doc_id = docs.doc_id ORDER BY sequence ASC";
 
         String[] args = {docId};
@@ -63,7 +63,7 @@ public class AllRevisionsOfDocumentCallable extends SQLQueueCallable<DocumentRev
             while (cursor.moveToNext()) {
                 long sequence = cursor.getLong(3);
                 List<? extends Attachment> atts = attachmentManager.attachmentsForRevision(db, sequence);
-                BasicDocumentRevision rev = DocumentsCallable.getFullRevisionFromCurrentCursor(cursor, atts);
+                BasicDocumentRevision rev = SqlDocumentUtils.getFullRevisionFromCurrentCursor(cursor, atts);
                 logger.finer("Rev: " + rev);
                 tree.add(rev);
             }

@@ -59,7 +59,7 @@ public class UpdateDocumentCallable extends SQLQueueCallable<BasicDocumentRevisi
         // set attachments
         this.attachmentManager.setAttachments(db, updated, preparedAndSavedAttachments);
         // now re-fetch the revision with updated attachments
-        BasicDocumentRevision updatedWithAttachments = DocumentsCallable.getDocumentInQueue(db,
+        BasicDocumentRevision updatedWithAttachments = SqlDocumentUtils.getDocumentInQueue(db,
                 updated.getId(), updated.getRevision(), attachmentManager);
         return updatedWithAttachments;
     }
@@ -76,11 +76,11 @@ public class UpdateDocumentCallable extends SQLQueueCallable<BasicDocumentRevisi
                 "Input previous revision id can not be empty");
         Preconditions.checkNotNull(body, "Input document body can not be null");
         if (validateBody) {
-            DocumentsCallable.validateDBBody(body);
+            SqlDocumentUtils.validateDBBody(body);
         }
         CouchUtils.validateRevisionId(prevRevId);
 
-        BasicDocumentRevision preRevision = DocumentsCallable.getDocumentInQueue(db, docId,
+        BasicDocumentRevision preRevision = SqlDocumentUtils.getDocumentInQueue(db, docId,
                 prevRevId,
                 attachmentManager);
 
@@ -88,9 +88,9 @@ public class UpdateDocumentCallable extends SQLQueueCallable<BasicDocumentRevisi
             throw new ConflictException("Revision to be updated is not current revision.");
         }
 
-        DocumentsCallable.setCurrent(db, preRevision, false);
+        SqlDocumentUtils.setCurrent(db, preRevision, false);
         String newRevisionId = insertNewWinnerRevision(db, body, preRevision, copyAttachments);
-        return DocumentsCallable.getDocumentInQueue(db, preRevision.getId(), newRevisionId,
+        return SqlDocumentUtils.getDocumentInQueue(db, preRevision.getId(), newRevisionId,
                 attachmentManager);
     }
 
@@ -100,7 +100,7 @@ public class UpdateDocumentCallable extends SQLQueueCallable<BasicDocumentRevisi
             throws AttachmentException, DatastoreException {
         String newRevisionId = CouchUtils.generateNextRevisionId(oldWinner.getRevision());
 
-        DocumentsCallable.InsertRevisionOptions options = new DocumentsCallable.InsertRevisionOptions();
+        SqlDocumentUtils.InsertRevisionOptions options = new SqlDocumentUtils.InsertRevisionOptions();
         options.docNumericId = oldWinner.getInternalNumericId();
         options.revId = newRevisionId;
         options.parentSequence = oldWinner.getSequence();
@@ -112,14 +112,14 @@ public class UpdateDocumentCallable extends SQLQueueCallable<BasicDocumentRevisi
         if (copyAttachments) {
             this.insertRevisionAndCopyAttachments(db, options);
         } else {
-            DocumentsCallable.insertRevision(db, options);
+            SqlDocumentUtils.insertRevision(db, options);
         }
 
         return newRevisionId;
     }
 
-    private long insertRevisionAndCopyAttachments(SQLDatabase db, DocumentsCallable.InsertRevisionOptions options) throws AttachmentException, DatastoreException {
-        long newSequence = DocumentsCallable.insertRevision(db, options);
+    private long insertRevisionAndCopyAttachments(SQLDatabase db, SqlDocumentUtils.InsertRevisionOptions options) throws AttachmentException, DatastoreException {
+        long newSequence = SqlDocumentUtils.insertRevision(db, options);
         //always copy attachments
         this.attachmentManager.copyAttachments(db, options.parentSequence, newSequence);
         // inserted revision and copied attachments, so we are done

@@ -14,7 +14,6 @@
 
 package com.cloudant.sync.datastore.sqlcallable;
 
-import com.cloudant.sync.datastore.Attachment;
 import com.cloudant.sync.datastore.BasicDocumentRevision;
 import com.cloudant.sync.datastore.DatastoreException;
 import com.cloudant.sync.sqlite.Cursor;
@@ -55,7 +54,7 @@ public class DeleteDocumentCallable extends SQLQueueCallable<List<BasicDocumentR
             cursor = db.rawQuery(sql, new String[]{id});
             while (cursor.moveToNext()) {
                 String revId = cursor.getString(0);
-                deleted.add(DocumentsCallable.deleteDocumentInQueue(db, id, revId,
+                deleted.add(SqlDocumentUtils.deleteDocumentInQueue(db, id, revId,
                         attachmentManager));
             }
             return deleted;

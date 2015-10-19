@@ -26,22 +26,17 @@ import com.cloudant.sync.datastore.DocumentNotFoundException;
 import com.cloudant.sync.datastore.DocumentRevisionBuilder;
 import com.cloudant.sync.datastore.DocumentRevisionTree;
 import com.cloudant.sync.datastore.InvalidDocumentException;
-import com.cloudant.sync.datastore.MutableDocumentRevision;
 import com.cloudant.sync.sqlite.ContentValues;
 import com.cloudant.sync.sqlite.Cursor;
 import com.cloudant.sync.sqlite.SQLDatabase;
-import com.cloudant.sync.sqlite.SQLQueueCallable;
 import com.cloudant.sync.util.CouchUtils;
 import com.cloudant.sync.util.DatabaseUtils;
 import com.cloudant.sync.util.JSONUtils;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
-import com.google.common.collect.Lists;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -49,15 +44,9 @@ import java.util.logging.Logger;
 /**
  * Created by mike on 17/10/2015.
  */
-public class DocumentsCallable {
+public final class SqlDocumentUtils {
 
-    private static final Logger logger = Logger.getLogger(DocumentsCallable.class.getCanonicalName());
-
-    final AttachmentManager attachmentManager;
-
-    public DocumentsCallable(AttachmentManager attachmentManager) {
-        this.attachmentManager = attachmentManager;
-    }
+    private static final Logger logger = Logger.getLogger(SqlDocumentUtils.class.getCanonicalName());
 
     static final String FULL_DOCUMENT_COLS = "docs.docid, docs.doc_id, revid, sequence, json, current, deleted, parent";
 
@@ -199,7 +188,7 @@ public class DocumentsCallable {
         // revision must have the same flag as it previous revision.
         // Deletion of non-winner leaf revision is mainly used when resolving
         // conflicts.
-        DocumentsCallable.InsertRevisionOptions options = new DocumentsCallable.InsertRevisionOptions();
+        SqlDocumentUtils.InsertRevisionOptions options = new SqlDocumentUtils.InsertRevisionOptions();
         options.docNumericId = prevRevision.getInternalNumericId();
         options.revId = newRevisionId;
         options.parentSequence = prevRevision.getSequence();
@@ -234,7 +223,7 @@ public class DocumentsCallable {
         }
     }
 
-    static long insertRevision(SQLDatabase db, DocumentsCallable.InsertRevisionOptions options) {
+    static long insertRevision(SQLDatabase db, SqlDocumentUtils.InsertRevisionOptions options) {
 
         long newSequence;
         ContentValues args = new ContentValues();
