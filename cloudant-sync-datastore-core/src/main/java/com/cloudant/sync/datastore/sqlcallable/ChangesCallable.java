@@ -52,7 +52,9 @@ public class ChangesCallable extends DocumentsCallable<Changes> {
                 ids.add(cursor.getLong(0));
                 lastSequence = Math.max(lastSequence, cursor.getLong(1));
             }
-            List<BasicDocumentRevision> results = getDocumentsWithInternalIdsInQueue(db, ids);
+
+            GetDocumentsWithInternalIdsCallable callable = new GetDocumentsWithInternalIdsCallable(ids, attachmentManager);
+            List<BasicDocumentRevision> results = callable.call(db);
             if (results.size() != ids.size()) {
                 throw new IllegalStateException("The number of document does not match number of ids, " +
                         "something must be wrong here.");

@@ -84,51 +84,6 @@ public abstract class DocumentsCallable<T> extends SQLQueueCallable<T> {
             "SELECT " + FULL_DOCUMENT_COLS + " FROM revs, docs WHERE docs.docid=? AND revs.doc_id=docs.doc_id " +
                     "AND revid=? LIMIT 1";
 
-    List<BasicDocumentRevision> getDocumentsWithInternalIdsInQueue(SQLDatabase db,
-                                                                   final List<Long> docIds)
-            throws AttachmentException, DocumentNotFoundException, DocumentException, DatastoreException {
-
-        if (docIds.size() == 0) {
-            return Collections.emptyList();
-        }
-
-        final String GET_DOCUMENTS_BY_INTERNAL_IDS = "SELECT " + FULL_DOCUMENT_COLS + " FROM revs, docs " +
-                "WHERE revs.doc_id IN ( %s ) AND current = 1 AND docs.doc_id = revs.doc_id";
-
-        // Split into batches because SQLite has a limit on the number
-        // of placeholders we can use in a single query. 999 is the default
-        // value, but it can be lower. It's hard to find this out from Java,
-        // so we use a value much lower.
-        List<BasicDocumentRevision> result = new ArrayList<BasicDocumentRevision>(docIds.size());
-
-        List<List<Long>> batches = Lists.partition(docIds, SqlConstants
-                .SQLITE_QUERY_PLACEHOLDERS_LIMIT);
-        for (List<Long> batch : batches) {
-            String sql = String.format(
-                    GET_DOCUMENTS_BY_INTERNAL_IDS,
-                    DatabaseUtils.makePlaceholders(batch.size())
-            );
-            String[] args = new String[batch.size()];
-            for (int i = 0; i < batch.size(); i++) {
-                args[i] = Long.toString(batch.get(i));
-            }
-            result.addAll(getRevisionsFromRawQuery(db, sql, args));
-        }
-
-        // Contract is to sort by sequence number, which we need to do
-        // outside the sqlDb as we're batching requests.
-        Collections.sort(result, new Comparator<BasicDocumentRevision>() {
-            @Override
-            public int compare(BasicDocumentRevision documentRevision, BasicDocumentRevision documentRevision2) {
-                long a = documentRevision.getSequence();
-                long b = documentRevision2.getSequence();
-                return (int) (a - b);
-            }
-        });
-
-        return result;
-    }
-
     List<BasicDocumentRevision> getRevisionsFromRawQuery(SQLDatabase db, String sql, String[] args)
             throws DocumentNotFoundException, AttachmentException, DocumentException, DatastoreException {
         List<BasicDocumentRevision> result = new ArrayList<BasicDocumentRevision>();
