@@ -48,17 +48,8 @@ public final class SqlDocumentUtils {
 
     private static final Logger logger = Logger.getLogger(SqlDocumentUtils.class.getCanonicalName());
 
-    static final String FULL_DOCUMENT_COLS = "docs.docid, docs.doc_id, revid, sequence, json, current, deleted, parent";
 
-    private static final String GET_DOCUMENT_CURRENT_REVISION =
-            "SELECT " + FULL_DOCUMENT_COLS + " FROM revs, docs WHERE docs.docid=? AND revs.doc_id=docs.doc_id " +
-                    "AND current=1 ORDER BY revid DESC LIMIT 1";
-
-    private static final String GET_DOCUMENT_GIVEN_REVISION =
-            "SELECT " + FULL_DOCUMENT_COLS + " FROM revs, docs WHERE docs.docid=? AND revs.doc_id=docs.doc_id " +
-                    "AND revid=? LIMIT 1";
-
-   static List<BasicDocumentRevision> getRevisionsFromRawQuery(SQLDatabase db, String sql,
+    static List<BasicDocumentRevision> getRevisionsFromRawQuery(SQLDatabase db, String sql,
                                                                String[] args,
                                                                AttachmentManager attachmentManager)
             throws DocumentNotFoundException, AttachmentException, DocumentException, DatastoreException {
@@ -128,7 +119,7 @@ public final class SqlDocumentUtils {
         Cursor cursor = null;
         try {
             String[] args = (rev == null) ? new String[]{id} : new String[]{id, rev};
-            String sql = (rev == null) ? GET_DOCUMENT_CURRENT_REVISION : GET_DOCUMENT_GIVEN_REVISION;
+            String sql = (rev == null) ? SqlConstants.GET_DOCUMENT_CURRENT_REVISION : SqlConstants.GET_DOCUMENT_GIVEN_REVISION;
             cursor = db.rawQuery(sql, args);
             if (cursor.moveToFirst()) {
                 long sequence = cursor.getLong(3);

@@ -40,7 +40,7 @@ public class GetAllDocumentsCallable extends SQLQueueCallable<List<BasicDocument
     @Override
     public List<BasicDocumentRevision> call(SQLDatabase db) throws Exception {
         // Generate the SELECT statement, based on the options:
-        String sql = String.format("SELECT " + SqlDocumentUtils.FULL_DOCUMENT_COLS+
+        String sql = String.format("SELECT " + SqlConstants.FULL_DOCUMENT_COLS+
                         " FROM revs, docs " +
                         "WHERE deleted = 0 AND current = 1 AND docs.doc_id = revs.doc_id " +
                         "ORDER BY docs.doc_id %1$s, revid DESC LIMIT %2$s OFFSET %3$s ",

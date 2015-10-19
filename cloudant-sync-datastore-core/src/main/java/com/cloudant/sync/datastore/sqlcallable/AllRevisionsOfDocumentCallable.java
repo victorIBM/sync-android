@@ -51,7 +51,7 @@ public class AllRevisionsOfDocumentCallable extends SQLQueueCallable<DocumentRev
 
     private DocumentRevisionTree getAllRevisionsOfDocumentInQueue(SQLDatabase db, String docId)
             throws DocumentNotFoundException, AttachmentException, DatastoreException {
-        String sql = "SELECT " + SqlDocumentUtils.FULL_DOCUMENT_COLS + " FROM revs, docs " +
+        String sql = "SELECT " + SqlConstants.FULL_DOCUMENT_COLS + " FROM revs, docs " +
                 "WHERE docs.docid=? AND revs.doc_id = docs.doc_id ORDER BY sequence ASC";
 
         String[] args = {docId};

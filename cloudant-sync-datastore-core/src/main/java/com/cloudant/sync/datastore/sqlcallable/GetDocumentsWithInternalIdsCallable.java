@@ -56,7 +56,7 @@ public class GetDocumentsWithInternalIdsCallable extends SQLQueueCallable<List<B
         }
 
         final String GET_DOCUMENTS_BY_INTERNAL_IDS = "SELECT " +
-                SqlDocumentUtils.FULL_DOCUMENT_COLS + " FROM revs, docs " +
+                SqlConstants.FULL_DOCUMENT_COLS + " FROM revs, docs " +
                 "WHERE revs.doc_id IN ( %s ) AND current = 1 AND docs.doc_id = revs.doc_id";
 
         // Split into batches because SQLite has a limit on the number

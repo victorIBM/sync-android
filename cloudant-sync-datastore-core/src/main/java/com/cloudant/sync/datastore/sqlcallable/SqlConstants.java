@@ -22,4 +22,17 @@ public class SqlConstants {
     // SQLite has limit on the number of placeholders on a single query, default 999.
     // http://www.sqlite.org/limits.html
     public static final int SQLITE_QUERY_PLACEHOLDERS_LIMIT = 500;
+
+    static final String FULL_DOCUMENT_COLS =
+            "docs.docid, docs.doc_id, revid, sequence, json, current, deleted, parent";
+
+    static final String GET_DOCUMENT_GIVEN_REVISION =
+            "SELECT " + FULL_DOCUMENT_COLS +
+                    " FROM revs, docs WHERE docs.docid=? AND revs.doc_id=docs.doc_id " +
+                    "AND revid=? LIMIT 1";
+
+    static final String GET_DOCUMENT_CURRENT_REVISION =
+            "SELECT " + FULL_DOCUMENT_COLS +
+                    " FROM revs, docs WHERE docs.docid=? AND revs.doc_id=docs.doc_id " +
+                    "AND current=1 ORDER BY revid DESC LIMIT 1";
 }
