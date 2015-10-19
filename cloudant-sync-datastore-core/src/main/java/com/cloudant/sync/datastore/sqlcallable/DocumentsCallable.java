@@ -214,7 +214,7 @@ public abstract class DocumentsCallable<T> extends SQLQueueCallable<T> {
         }
     }
 
-    void setCurrent(SQLDatabase db, BasicDocumentRevision winner, boolean currentValue) {
+    static void setCurrent(SQLDatabase db, BasicDocumentRevision winner, boolean currentValue) {
         ContentValues updateContent = new ContentValues();
         updateContent.put("current", currentValue ? 1 : 0);
         String[] whereArgs = new String[]{String.valueOf(winner.getSequence())};
@@ -229,7 +229,7 @@ public abstract class DocumentsCallable<T> extends SQLQueueCallable<T> {
         }
     }
 
-    long insertRevision(SQLDatabase db, DocumentsCallable.InsertRevisionOptions options) {
+    static long insertRevision(SQLDatabase db, DocumentsCallable.InsertRevisionOptions options) {
 
         long newSequence;
         ContentValues args = new ContentValues();
@@ -253,7 +253,7 @@ public abstract class DocumentsCallable<T> extends SQLQueueCallable<T> {
         return newSequence;
     }
 
-    protected long insertDocumentID(SQLDatabase db, String docId) {
+    static protected long insertDocumentID(SQLDatabase db, String docId) {
         ContentValues args = new ContentValues();
         args.put("docid", docId);
         return db.insert("docs", args);
