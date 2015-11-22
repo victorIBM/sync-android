@@ -21,10 +21,12 @@ import com.cloudant.sync.sqlite.SQLQueueCallable;
 import com.cloudant.sync.util.Misc;
 import com.cloudant.sync.util.TestUtils;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -68,6 +70,47 @@ public class AttachmentTest extends BasicDatastoreTestBase {
             Assert.assertArrayEquals(expectedSha1, savedAtt2.key);
         } catch (FileNotFoundException fnfe) {
             Assert.fail("FileNotFoundException thrown " + fnfe);
+        } finally {
+            IOUtils.closeQuietly(fis);
+        }
+    }
+
+    /**
+     * This test makes sure that if we are copying an attachment from one document to another,
+     * but delete the source document before saving the new document and then compact (which
+     * means we remove the attachment data for the attachment we're copying), we throw an
+     * appropriate exception rather than losing data.
+     */
+    @Test
+    public void savedAttachmentSurvivesCompaction() throws Exception {
+
+        String attachmentName = "attachment_1.txt";
+        File f = TestUtils.loadFixture("fixture/"+attachmentName);
+
+        MutableDocumentRevision doc1 = new MutableDocumentRevision();
+        doc1.body = bodyOne;
+        Attachment att = new UnsavedFileAttachment(f, "text/plain");
+        doc1.attachments.put(attachmentName, att);
+        BasicDocumentRevision doc1Saved = datastore.createDocumentFromRevision(doc1);
+
+        Attachment attachmentToCopy = doc1Saved.getAttachments().get(attachmentName);
+
+        datastore.deleteDocumentFromRevision(doc1Saved);
+        datastore.compact();
+
+        // Create a new revision containing the saved attachment from the previous revision
+        MutableDocumentRevision doc2 = new MutableDocumentRevision();
+        doc2.body = bodyOne;
+        doc2.attachments.put(attachmentName, attachmentToCopy);
+        BasicDocumentRevision doc2Saved = datastore.createDocumentFromRevision(doc2);
+
+        // Check doc2Saved's copy of the attachment is correct
+        FileInputStream fis = null;
+        try {
+            Attachment savedAtt = doc2Saved.getAttachments().get(attachmentName);
+            Assert.assertTrue(TestUtils.streamsEqual(new FileInputStream(f), savedAtt.getInputStream()));
+        } catch (FileNotFoundException ex) {
+            Assert.fail("FileNotFoundException thrown " + ex);
         } finally {
             IOUtils.closeQuietly(fis);
         }
