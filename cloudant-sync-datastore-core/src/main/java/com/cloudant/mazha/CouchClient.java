@@ -287,6 +287,8 @@ public class CouchClient  {
             if(filterParameters != null) {
                 options.putAll(filterParameters);
             }
+        }else {
+            logger.info("Generating URL without filter. Filter name is null");
         }
         if(since != null) {
             options.put("since", since);

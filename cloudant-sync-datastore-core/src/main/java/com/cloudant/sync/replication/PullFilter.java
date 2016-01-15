@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * <p>Provides the name and parameters for a filter function to be used
@@ -48,6 +49,8 @@ import java.util.Map;
  * @see <a href="http://docs.couchdb.org/en/1.6.x/couchapp/ddocs.html#filter-functions">Filter functions CouchDB docs</a>
  */
 public class PullFilter {
+
+    private static final Logger logger = Logger.getLogger(PullFilter.class.getCanonicalName());
 
     private final String name;
 
@@ -93,6 +96,7 @@ public class PullFilter {
      * functions CouchDB docs</a>
      */
     public PullFilter(String filterName, Map<String, String> parameters) {
+        logger.info("Created pull filter with name: "+filterName);
         this.name = filterName;
         Map<String, String> internalParams = new HashMap<String, String>();
         internalParams.putAll(parameters);

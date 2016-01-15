@@ -120,8 +120,10 @@ public class CouchClientWrapper implements CouchDB {
     @Override
     public ChangesResult changes(PullFilter filter, Object lastSequence, int limit) {
         if (filter == null) {
+            logger.info("Filter is null, not using a filter");
             return couchClient.changes(lastSequence, limit);
         } else {
+            logger.info("Fetching changes using filter named "+filter.getName());
             return couchClient.changes(filter.getName(), filter.getParameters(), lastSequence, limit);
         }
     }

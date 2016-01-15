@@ -20,10 +20,10 @@ import com.cloudant.mazha.ChangesResult;
 import com.cloudant.mazha.CouchClient;
 import com.cloudant.mazha.DocumentRevs;
 import com.cloudant.sync.datastore.Attachment;
+import com.cloudant.sync.datastore.BasicDocumentRevision;
 import com.cloudant.sync.datastore.Datastore;
 import com.cloudant.sync.datastore.DatastoreException;
 import com.cloudant.sync.datastore.DatastoreExtended;
-import com.cloudant.sync.datastore.BasicDocumentRevision;
 import com.cloudant.sync.datastore.DocumentException;
 import com.cloudant.sync.datastore.DocumentNotFoundException;
 import com.cloudant.sync.datastore.DocumentRevsList;
@@ -31,7 +31,6 @@ import com.cloudant.sync.datastore.PreparedAttachment;
 import com.cloudant.sync.datastore.UnsavedStreamAttachment;
 import com.cloudant.sync.util.JSONUtils;
 import com.cloudant.sync.util.Misc;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.eventbus.EventBus;
@@ -105,6 +104,7 @@ class BasicPullStrategy implements ReplicationStrategy {
         this.sourceDb = new CouchClientWrapper(new CouchClient(source, requestInterceptors, responseInterceptors));
         this.targetDb = new DatastoreWrapper((DatastoreExtended) target);
         String replicatorName;
+        logger.info("Using filter with name: "+filter.getName());
         if(filter == null) {
             replicatorName = String.format("%s <-- %s ", target.getDatastoreName(), source);
         } else {
@@ -400,6 +400,8 @@ class BasicPullStrategy implements ReplicationStrategy {
         if(filter != null) {
             dict.put("filter", this.filter.toQueryString());
         }
+
+        logger.info("filter query string is: "+this.filter.toQueryString());
         // get raw SHA-1 of dictionary
         byte[] sha1Bytes = Misc.getSha1(new ByteArrayInputStream(JSONUtils.serializeAsBytes(dict)));
         // return SHA-1 as a hex string
@@ -410,6 +412,7 @@ class BasicPullStrategy implements ReplicationStrategy {
     private ChangesResultWrapper nextBatch() throws DatastoreException {
         final Object lastCheckpoint = this.targetDb.getCheckpoint(this.getReplicationId());
         logger.fine("last checkpoint "+lastCheckpoint);
+        logger.info("Getting changes feed using filter with name: "+filter.getName());
         ChangesResult changeFeeds = this.sourceDb.changes(
                 this.filter,
                 lastCheckpoint,
