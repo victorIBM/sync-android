@@ -104,7 +104,9 @@ class BasicPullStrategy implements ReplicationStrategy {
         this.sourceDb = new CouchClientWrapper(new CouchClient(source, requestInterceptors, responseInterceptors));
         this.targetDb = new DatastoreWrapper((DatastoreExtended) target);
         String replicatorName;
-        logger.info("Using filter with name: "+filter.getName());
+        if(filter!= null) {
+            logger.info("Using filter with name: " + filter.getName());
+        }
         if(filter == null) {
             replicatorName = String.format("%s <-- %s ", target.getDatastoreName(), source);
         } else {
@@ -399,9 +401,9 @@ class BasicPullStrategy implements ReplicationStrategy {
         dict.put("target", this.targetDb.getIdentifier());
         if(filter != null) {
             dict.put("filter", this.filter.toQueryString());
+            logger.info("filter query string is: " + this.filter.toQueryString());
         }
 
-        logger.info("filter query string is: "+this.filter.toQueryString());
         // get raw SHA-1 of dictionary
         byte[] sha1Bytes = Misc.getSha1(new ByteArrayInputStream(JSONUtils.serializeAsBytes(dict)));
         // return SHA-1 as a hex string
@@ -411,8 +413,10 @@ class BasicPullStrategy implements ReplicationStrategy {
 
     private ChangesResultWrapper nextBatch() throws DatastoreException {
         final Object lastCheckpoint = this.targetDb.getCheckpoint(this.getReplicationId());
-        logger.fine("last checkpoint "+lastCheckpoint);
-        logger.info("Getting changes feed using filter with name: "+filter.getName());
+        logger.fine("last checkpoint " + lastCheckpoint);
+        if (this.filter != null) {
+            logger.info("Getting changes feed using filter with name: " + filter.getName());
+        }
         ChangesResult changeFeeds = this.sourceDb.changes(
                 this.filter,
                 lastCheckpoint,
