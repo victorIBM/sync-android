@@ -64,7 +64,7 @@ public class SQLDatabaseFactory {
                                 ".AndroidSQLCipherSQLite")
                                 .getMethod("createAndroidSQLite", String.class, KeyProvider.class);
                     }
-                    return (SQLDatabase) androidSqlLite.invoke(null, new Object[]{dbFilename,
+                    return (SQLDatabase) androidSqlLiteCipher.invoke(null, new Object[]{dbFilename,
                             provider});
                 } else {
                     if (androidSqlLite == null) {
