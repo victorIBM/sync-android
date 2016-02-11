@@ -18,7 +18,6 @@
 package com.cloudant.sync.sqlite;
 
 import com.cloudant.sync.datastore.encryption.KeyProvider;
-import com.cloudant.sync.datastore.encryption.NullKeyProvider;
 import com.cloudant.sync.datastore.migrations.Migration;
 import com.cloudant.sync.util.DatabaseUtils;
 import com.cloudant.sync.util.Misc;
@@ -38,6 +37,8 @@ public class SQLDatabaseFactory {
 
     private final static Logger logger = Logger.getLogger(SQLDatabaseFactory.class.getCanonicalName());
 
+    private static Method androidSqlLiteCipher = null;
+    private static Method androidSqlLite = null;
     /**
      * SQLCipher-based implementation for creating database.
      * @param dbFilename full file path of the db file
@@ -58,13 +59,20 @@ public class SQLDatabaseFactory {
 
             if (runningOnAndroid) {
                 if (useSqlCipher) {
-                    return (SQLDatabase) Class.forName("com.cloudant.sync.sqlite.android.AndroidSQLCipherSQLite")
-                            .getMethod("createAndroidSQLite", String.class, KeyProvider.class)
-                            .invoke(null, new Object[]{dbFilename, provider});
+                    if (androidSqlLiteCipher == null) {
+                        androidSqlLiteCipher = Class.forName("com.cloudant.sync.sqlite.android" +
+                                ".AndroidSQLCipherSQLite")
+                                .getMethod("createAndroidSQLite", String.class, KeyProvider.class);
+                    }
+                    return (SQLDatabase) androidSqlLite.invoke(null, new Object[]{dbFilename,
+                            provider});
                 } else {
-                    return (SQLDatabase) Class.forName("com.cloudant.sync.sqlite.android.AndroidSQLite")
-                            .getMethod("createAndroidSQLite", String.class)
-                            .invoke(null, dbFilename);
+                    if (androidSqlLite == null) {
+                        androidSqlLite = Class.forName("com.cloudant.sync.sqlite.android" +
+                                ".AndroidSQLite")
+                                .getMethod("createAndroidSQLite", String.class);
+                    }
+                    return (SQLDatabase) androidSqlLite.invoke(null, dbFilename);
                 }
             } else {
                 if (useSqlCipher) {
