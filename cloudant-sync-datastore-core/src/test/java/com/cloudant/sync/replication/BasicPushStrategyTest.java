@@ -77,10 +77,15 @@ public class BasicPushStrategyTest extends ReplicationTestBase {
     // tests...
 
     @Test
-    public void push_nothing_lastSequenceShouldStillBeNull() throws Exception {
+    public void push_nothing_lastSequenceShouldBe0() throws Exception {
+        // The sequence should be zero, zero indicates there are
+        // no documents in the local store, the event that
+        // there are document in the local store and zero changes
+        // have occured since the last push the sequence should be
+        // the same as the highest sequence in the datastore.
         BasicPushStrategy replicator = super.getPushStrategy();
         this.push(replicator, 0);
-        assertPushReplicationStatus(replicator, 0, 1, null);
+        assertPushReplicationStatus(replicator, 0, 1, "0");
     }
 
     @Test

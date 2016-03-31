@@ -89,6 +89,8 @@ class BasicPushStrategy implements ReplicationStrategy {
 
     public int bulkInsertSize = 10;
 
+    public PushFilter filter = null;
+
     public PushAttachmentsInline pushAttachmentsInline = PushAttachmentsInline.Small;
 
     public BasicPushStrategy(Datastore source,
@@ -222,10 +224,8 @@ class BasicPushStrategy implements ReplicationStrategy {
             );
             logger.info(msg);
 
-            if (changes.size() > 0) {
-                changesProcessed = processOneChangesBatch(changes);
-                this.state.documentCounter += changesProcessed;
-            }
+            changesProcessed = processOneChangesBatch(changes);
+            this.state.documentCounter += changesProcessed;
 
             long batchEndTime = System.currentTimeMillis();
             msg =  String.format(
@@ -256,7 +256,36 @@ class BasicPushStrategy implements ReplicationStrategy {
     private Changes getNextBatch() throws ExecutionException, InterruptedException, DatastoreException {
         long lastPushSequence = getLastCheckpointSequence();
         logger.fine("Last push sequence from remote database: " + lastPushSequence);
-        return this.sourceDb.getDbCore().changes(lastPushSequence, this.changeLimitPerBatch);
+        Changes changes = this.sourceDb.getDbCore().changes(lastPushSequence, this.changeLimitPerBatch);
+
+        if(this.filter == null){
+            return changes;
+        }
+
+        List<DocumentRevision> allowedChanges = new ArrayList<DocumentRevision>(changes.getResults().size());
+
+        for (DocumentRevision revision : changes.getResults()){
+            if(this.filter.shouldReplicateDocument(revision)) {
+                allowedChanges.add(revision);
+            }
+        }
+
+        if(allowedChanges.size() == 0){
+            changes = new FilteredChanges(changes.getLastSequence(),allowedChanges);
+        } else {
+
+            changes = new FilteredChanges(changes.getLastSequence(), allowedChanges);
+
+        }
+
+        return changes;
+
+    }
+
+    private static class FilteredChanges extends Changes {
+        public FilteredChanges(long lastSequence, List<DocumentRevision> results) {
+            super(lastSequence, results);
+        }
     }
 
     /**

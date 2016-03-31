@@ -15,6 +15,7 @@
 package com.cloudant.sync.replication;
 
 import com.cloudant.common.RequireRunningCouchDB;
+import com.cloudant.sync.datastore.DocumentRevision;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -174,16 +175,92 @@ public class PushReplicatorTest extends ReplicationTestBase {
         ReplicatorBuilder.Push p = ReplicatorBuilder.push().
                 from(datastore).
                 to(new URI("http://🍶:🍶@some-host/path%2Fsome-path-日本"));
-        BasicReplicator r = (BasicReplicator)p.build();
+        BasicReplicator r = (BasicReplicator) p.build();
         // check that user/pass has been removed
         Assert.assertEquals("http://some-host:80/path%2Fsome-path-日本",
-                (((CouchClientWrapper)(((BasicPushStrategy)r.strategy).targetDb)).
+                (((CouchClientWrapper) (((BasicPushStrategy) r.strategy).targetDb)).
                         getCouchClient().
                         getRootUri()).
                         toString()
         );
         assertCookieInterceptorPresent(p, "name=%F0%9F%8D%B6&password=%F0%9F%8D%B6");
+    }
 
+    @Test
+    public void testPushReplicationFilter() throws Exception {
+        prepareTwoDocumentsInLocalDB();
+        ReplicatorBuilder.Push push = this.getPushBuilder();
+        push.filter(new PushFilter() {
+            @Override
+            public boolean shouldReplicateDocument(DocumentRevision revision) {
+                return revision.getBody().asMap().get("name").equals("Tom");
+            }
+        });
+        Replicator replicator = push.build();
+        replicator.start();
+        while(replicator.getState() != Replicator.State.COMPLETE && replicator.getState() != Replicator.State.ERROR) {
+            Thread.sleep(50);
+        }
+
+        Assert.assertEquals(Replicator.State.COMPLETE, replicator.getState());
+
+        // Check that the remote only contains the single doc we need.
+        Assert.assertEquals(1, couchClient.getDbInfo().getDocCount());
+    }
+
+    @Test
+    public void testPushReplicationFilterPushesZeroDocs() throws Exception {
+        prepareTwoDocumentsInLocalDB();
+        ReplicatorBuilder.Push push = this.getPushBuilder();
+        push.filter(new PushFilter() {
+            @Override
+            public boolean shouldReplicateDocument(DocumentRevision revision) {
+                return false;
+            }
+        });
+        Replicator replicator = push.build();
+        replicator.start();
+        while(replicator.getState() != Replicator.State.COMPLETE && replicator.getState() != Replicator.State.ERROR) {
+            Thread.sleep(50);
+        }
+
+        Assert.assertEquals(Replicator.State.COMPLETE, replicator.getState());
+
+        // Check that the remote only contains the single doc we need.
+        Assert.assertEquals(0,couchClient.getDbInfo().getDocCount());
+    }
+
+    @Test
+    public void testPushReplicationFilterContinuesFromCorrectPlace() throws Exception {
+        prepareTwoDocumentsInLocalDB();
+        ReplicatorBuilder.Push push = this.getPushBuilder();
+        push.filter(new PushFilter() {
+            @Override
+            public boolean shouldReplicateDocument(DocumentRevision revision) {
+                return false;
+            }
+        });
+        Replicator replicator = push.build();
+        replicator.start();
+        while(replicator.getState() != Replicator.State.COMPLETE && replicator.getState() != Replicator.State.ERROR) {
+            Thread.sleep(50);
+        }
+
+        Assert.assertEquals(Replicator.State.COMPLETE, replicator.getState());
+
+        // Check that the remote only contains the single doc we need.
+        Assert.assertEquals(0, couchClient.getDbInfo().getDocCount());
+        replicator = this.getPushBuilder().build();
+        replicator.start();
+
+        while(replicator.getState() != Replicator.State.COMPLETE && replicator.getState() != Replicator.State.ERROR) {
+            Thread.sleep(50);
+        }
+
+        Assert.assertEquals(Replicator.State.COMPLETE, replicator.getState());
+
+        // Check that the remote only contains the single doc we need.
+        Assert.assertEquals(0, couchClient.getDbInfo().getDocCount());
     }
 
 

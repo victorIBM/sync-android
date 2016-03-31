@@ -92,6 +92,8 @@ public abstract class ReplicatorBuilder<S, T, E> {
 
         private PushAttachmentsInline pushAttachmentsInline = PushAttachmentsInline.Small;
 
+        private PushFilter pushFilter = null;
+
         @Override
         public Replicator build() {
 
@@ -111,8 +113,19 @@ public abstract class ReplicatorBuilder<S, T, E> {
             pushStrategy.batchLimitPerRun = batchLimitPerRun;
             pushStrategy.bulkInsertSize = bulkInsertSize;
             pushStrategy.pushAttachmentsInline = pushAttachmentsInline;
+            pushStrategy.filter = pushFilter;
 
             return new BasicReplicator(pushStrategy, super.id);
+        }
+
+        /**
+         *  Sets the filter to use for this replication
+         * @param filter the filter to use for this replication
+         * @return This instance of {@link ReplicatorBuilder}
+         */
+        public Push filter(PushFilter filter){
+            this.pushFilter = filter;
+            return this;
         }
 
         /**
