@@ -187,33 +187,55 @@ class BasicPushStrategy implements ReplicationStrategy {
     }
 
     private void replicate()
-            throws DatabaseNotFoundException, InterruptedException, ExecutionException, AttachmentException, DatastoreException {
+            throws DatabaseNotFoundException, InterruptedException, ExecutionException,
+            AttachmentException, DatastoreException {
         logger.info("Push replication started");
         long startTime = System.currentTimeMillis();
 
         // We were cancelled before we started
-        if (this.state.cancel) { return; }
+        if (this.state.cancel) {
+            return;
+        }
 
-        if(!this.targetDb.exists()) {
+        if (!this.targetDb.exists()) {
             throw new DatabaseNotFoundException(
                     "Database not found: " + this.targetDb.getIdentifier());
         }
 
         this.state.documentCounter = 0;
-        for(this.state.batchCounter = 1 ; this.state.batchCounter < this.batchLimitPerRun; this.state.batchCounter ++) {
+        for (this.state.batchCounter = 1; this.state.batchCounter < this.batchLimitPerRun; this
+                .state.batchCounter++) {
 
-            if (this.state.cancel) { return; }
+            if (this.state.cancel) {
+                return;
+            }
 
             String msg = String.format(
-                "Batch %s started (completed %s changes so far)",
-                this.state.batchCounter,
-                this.state.documentCounter
+                    "Batch %s started (completed %s changes so far)",
+                    this.state.batchCounter,
+                    this.state.documentCounter
             );
             logger.info(msg);
             long batchStartTime = System.currentTimeMillis();
 
             Changes changes = getNextBatch();
             int changesProcessed = 0;
+
+            Changes changesToProcess;
+            if (this.filter != null) {
+                List<DocumentRevision> allowedChanges = new ArrayList<DocumentRevision>(changes
+                        .getResults().size());
+
+                for (DocumentRevision revision : changes.getResults()) {
+                    if (this.filter.shouldReplicateDocument(revision)) {
+                        allowedChanges.add(revision);
+                    }
+                }
+
+                changesToProcess = new FilteredChanges(changes.getLastSequence(), allowedChanges);
+            } else {
+                changesToProcess = changes;
+            }
 
             // So we can check whether all changes were processed during
             // a log analysis.
@@ -224,21 +246,33 @@ class BasicPushStrategy implements ReplicationStrategy {
             );
             logger.info(msg);
 
-            changesProcessed = processOneChangesBatch(changes);
-            this.state.documentCounter += changesProcessed;
+            if (changesToProcess.size() > 0) {
+                changesProcessed = processOneChangesBatch(changesToProcess);
+                this.state.documentCounter += changesProcessed;
+            }
+
+            if (!this.state.cancel) {
+                try {
+                    this.putCheckpoint(String.valueOf(changesToProcess.getLastSequence()));
+                } catch (DatastoreException e) {
+                    logger.log(Level.WARNING, "Failed to put checkpoint doc, next replication " +
+                            "will " +
+                            "start from previous checkpoint", e);
+                }
+            }
 
             long batchEndTime = System.currentTimeMillis();
-            msg =  String.format(
+            msg = String.format(
                     "Batch %s completed in %sms (processed %s changes)",
                     this.state.batchCounter,
-                    batchEndTime-batchStartTime,
+                    batchEndTime - batchStartTime,
                     changesProcessed
             );
             logger.info(msg);
 
             // This logic depends on the changes in the feed rather than the
             // changes we actually processed.
-            if(changes.size() == 0) {
+            if (changes.size() == 0) {
                 break;
             }
         }
@@ -256,30 +290,7 @@ class BasicPushStrategy implements ReplicationStrategy {
     private Changes getNextBatch() throws ExecutionException, InterruptedException, DatastoreException {
         long lastPushSequence = getLastCheckpointSequence();
         logger.fine("Last push sequence from remote database: " + lastPushSequence);
-        Changes changes = this.sourceDb.getDbCore().changes(lastPushSequence, this.changeLimitPerBatch);
-
-        if(this.filter == null){
-            return changes;
-        }
-
-        List<DocumentRevision> allowedChanges = new ArrayList<DocumentRevision>(changes.getResults().size());
-
-        for (DocumentRevision revision : changes.getResults()){
-            if(this.filter.shouldReplicateDocument(revision)) {
-                allowedChanges.add(revision);
-            }
-        }
-
-        if(allowedChanges.size() == 0){
-            changes = new FilteredChanges(changes.getLastSequence(),allowedChanges);
-        } else {
-
-            changes = new FilteredChanges(changes.getLastSequence(), allowedChanges);
-
-        }
-
-        return changes;
-
+        return this.sourceDb.getDbCore().changes(lastPushSequence, this.changeLimitPerBatch);
     }
 
     private static class FilteredChanges extends Changes {
@@ -329,15 +340,6 @@ class BasicPushStrategy implements ReplicationStrategy {
                 this.targetDb.putMultiparts(multiparts);
                 this.targetDb.bulkCreateSerializedDocs(serialisedMissingRevs);
                 changesProcessed += docMissingRevs.size();
-            }
-        }
-
-        if (!this.state.cancel) {
-            try {
-                this.putCheckpoint(String.valueOf(changes.getLastSequence()));
-            } catch (DatastoreException e){
-                logger.log(Level.WARNING,"Failed to put checkpoint doc, next replication will " +
-                        "start from previous checkpoint",e);
             }
         }
 
