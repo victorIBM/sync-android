@@ -15,6 +15,7 @@
 package com.cloudant.todo;
 
 import com.cloudant.sync.datastore.ConflictException;
+import com.cloudant.sync.replication.ReplicationService;
 
 import java.net.URISyntaxException;
 import java.util.List;
@@ -22,11 +23,17 @@ import java.util.List;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ListActivity;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -59,6 +66,47 @@ public class TodoActivity
     private static TasksModel sTasks;
     private TaskAdapter mTaskAdapter;
 
+    private final Handler mHandler = new Handler(Looper.getMainLooper());
+    private Dialog mProgressDialog;
+
+    private ReplicationService mReplicationService;
+    private boolean mIsBound;
+
+    private ServiceConnection mConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            mReplicationService = ((ReplicationService.LocalBinder) service).getService();
+            mReplicationService.addListener(new ReplicationService.SimpleReplicationCompleteListener() {
+                @Override
+                public void replicationComplete(int id) {
+                    Log.d(LOG_TAG, "Service has reported an individual replicationComplete: " + id);
+                    if (id == MyReplicationService.PULL_REPLICATION_ID) {
+                        mHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                TodoActivity.this.replicationComplete();
+                            }
+                        });
+                    }
+                }
+
+                @Override
+                public void replicationErrored(int id) {
+                    Log.d(LOG_TAG, "Service has reported an individual replicationErrored: " + id);
+                }
+            });
+            Log.d(LOG_TAG, "bound to service");
+            Toast.makeText(TodoActivity.this, "Bound to replication service", Toast.LENGTH_SHORT).show();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            mReplicationService = null;
+            Log.d(LOG_TAG, "unbound from service");
+            Toast.makeText(TodoActivity.this, "Disconnected from replication service", Toast.LENGTH_SHORT).show();
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.d(LOG_TAG, "onCreate()");
@@ -85,6 +133,20 @@ public class TodoActivity
 
         // Load the tasks from the model
         this.reloadTasksFromModel();
+    }
+
+    @Override
+    protected void onStart() {
+        Log.d(LOG_TAG, "onStart()");
+        super.onStart();
+        bindToService();
+    }
+
+    @Override
+    protected void onStop() {
+        Log.d(LOG_TAG, "onStop()");
+        super.onStop();
+        unbindFromService();
     }
 
     @Override
@@ -162,11 +224,14 @@ public class TodoActivity
      * TasksModel takes care of calling this on the main thread.
      */
     void replicationComplete() {
+        Log.d(LOG_TAG, "replicationComplete called in TodoActivity");
         reloadTasksFromModel();
         Toast.makeText(getApplicationContext(),
                 R.string.replication_completed,
                 Toast.LENGTH_LONG).show();
-        dismissDialog(DIALOG_PROGRESS);
+        if (mProgressDialog != null && mProgressDialog.isShowing()) {
+            dismissDialog(DIALOG_PROGRESS);
+        }
     }
 
     /**
@@ -179,7 +244,9 @@ public class TodoActivity
         Toast.makeText(getApplicationContext(),
                 R.string.replication_error,
                 Toast.LENGTH_LONG).show();
-        dismissDialog(DIALOG_PROGRESS);
+        if (mProgressDialog != null && mProgressDialog.isShowing()) {
+            dismissDialog(DIALOG_PROGRESS);
+        }
     }
 
     //
@@ -235,7 +302,8 @@ public class TodoActivity
             case DIALOG_NEW_TASK:
                 return createNewTaskDialog();
             case DIALOG_PROGRESS:
-                return createProgressDialog();
+                mProgressDialog = createProgressDialog();
+                return mProgressDialog;
             default:
                 throw new RuntimeException("No dialog defined for id: " + id);
         }
@@ -371,4 +439,18 @@ public class TodoActivity
             mActionMode = null;
         }
     };
+
+    private void bindToService() {
+        Log.d(LOG_TAG, "binding to service");
+        bindService(new Intent(this, MyReplicationService.class), mConnection, Context.BIND_AUTO_CREATE);
+        mIsBound = true;
+    }
+
+    private void unbindFromService() {
+        if (mIsBound) {
+            Log.d(LOG_TAG, "unbinding from service");
+            unbindService(mConnection);
+            mIsBound = false;
+        }
+    }
 }

@@ -2,10 +2,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.cloudant.todo"
     android:versionCode="1"
-    android:versionName="1.0" >
+    android:versionName="1.0"
+    android:installLocation="internalOnly">
 
+    <!-- Replications require Internet access. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- We want to know when we're on Wifi so we only replicate when we are. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- We don't want the device to go to sleep while a replication is in progress. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- We want to restart our periodic replications after a reboot. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <uses-sdk
         android:minSdkVersion="11"
@@ -31,6 +38,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <receiver android:name=".MyWifiPeriodicReplicationReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+                <action android:name="com.cloudant.sync.replication.PeriodicReplicationReceiver.Alarm" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+        <service android:name=".MyReplicationService"
+            android:exported="false" />
+
     </application>
 
 </manifest>
