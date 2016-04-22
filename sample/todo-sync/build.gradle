@@ -6,19 +6,20 @@ buildscript {
         classpath 'com.android.tools.build:gradle:1.5.0'
     }
 }
-apply plugin: 'android'
+apply plugin: 'com.android.application'
 apply plugin: 'idea'
 
 repositories {
     mavenLocal()
     mavenCentral()
+    maven {
+        url "https://oss.sonatype.org/content/repositories/snapshots"
+    }
 }
 
 dependencies {
-//    compile(group: 'com.cloudant', name: 'cloudant-sync-datastore-android', version:'latest.release')
-    compile project(':cloudant-sync-datastore-android')
-    compile project(':cloudant-sync-datastore-core')
-    compile files('cloudant-sync-datastore-android/libs/android-support-v4.jar')
+    compile(group: 'com.cloudant', name: 'cloudant-sync-datastore-android', version:'latest.integration')
+    compile 'com.android.support:support-v4:23.3.0'
 }
 
 android {
@@ -64,15 +65,4 @@ android {
         }
     }
 
-}
-
-subprojects {
-
-    apply plugin: 'java'
-    apply plugin: 'maven'
-
-    repositories {
-        mavenLocal()
-        mavenCentral()
-    }
 }
