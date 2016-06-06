@@ -40,6 +40,8 @@ import com.cloudant.sync.datastore.Datastore;
 import com.cloudant.sync.datastore.DatastoreImpl;
 import com.cloudant.sync.datastore.encryption.KeyProvider;
 import com.cloudant.sync.datastore.migrations.SchemaOnlyMigration;
+import com.cloudant.sync.event.Subscribe;
+import com.cloudant.sync.notifications.DatabaseClosed;
 import com.cloudant.sync.sqlite.Cursor;
 import com.cloudant.sync.sqlite.SQLDatabase;
 import com.cloudant.sync.sqlite.SQLDatabaseFactory;
@@ -56,6 +58,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -127,24 +130,36 @@ public class IndexManager {
         }
         database = sqlDatabase;
         textSearchEnabled = ftsAvailable(queue, database);
+        this.datastore.getEventBus().register(this);
     }
 
     public void close() {
-        try {
-            queue.submit(new Runnable() {
-                @Override
-                public void run() {
-                    database.close();
+        if (!queue.isShutdown()) {
+            try {
+                queue.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        database.close();
 
+                    }
+                }).get();
+            } catch (InterruptedException e) {
+                logger.log(Level.SEVERE, "Failed to close db", e);
+                throw new RuntimeException(e);
+            } catch (ExecutionException e) {
+                logger.log(Level.SEVERE, "Failed to close db", e);
+            }
+            queue.shutdown();
+            try {
+                if (!queue.awaitTermination(5, TimeUnit.MINUTES)) {
+                    logger.log(Level.SEVERE, "IndexManager executor queue did not shutdown within " +
+
+                            "timeout.");
                 }
-            }).get();
-        } catch (InterruptedException e) {
-            logger.log(Level.SEVERE,"Failed to close db",e);
-            throw new RuntimeException(e);
-        } catch (ExecutionException e) {
-            logger.log(Level.SEVERE, "Failed to close db", e);
+            } catch (InterruptedException e) {
+                logger.log(Level.SEVERE, "IndexManager executor queue shutdown was interrupted.");
+            }
         }
-        queue.shutdown();
     }
 
     /**
@@ -449,4 +464,12 @@ public class IndexManager {
         return textSearchEnabled;
     }
 
+    @Subscribe
+    public void datastoreClosed(DatabaseClosed dc) {
+        // If the datastore was closed we should close this IndexManager
+        this.close();
+        // This could be a long running operation so normally would be done on another thread, but
+        // in this particular case we want to prevent a potential deletion of the datastore after
+        // the close until the operations on this executor are finished, so we use the event thread.
+    }
 }
