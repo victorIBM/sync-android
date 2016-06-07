@@ -40,7 +40,7 @@ public class DatastoreManagerTest {
         TEST_PATH = FileUtils.getTempDirectory().getAbsolutePath() + File.separator +
                 "DatastoreManagerTest";
         new File(TEST_PATH).mkdirs();
-        manager = new DatastoreManager(TEST_PATH);
+        manager = DatastoreManager.getInstance(TEST_PATH);
     }
 
     @After
@@ -54,7 +54,7 @@ public class DatastoreManagerTest {
         try {
             f.mkdir();
             f.setReadOnly();
-            manager = new DatastoreManager(f.getAbsolutePath());
+            manager = DatastoreManager.getInstance(f.getAbsolutePath());
         } finally {
             f.setWritable(true);
             f.delete();
@@ -65,7 +65,7 @@ public class DatastoreManagerTest {
     public void createFailsIfMissingIntermediates(){
         File f = new File(TEST_PATH, "missing_inter/missing_test");
         try {
-            manager = new DatastoreManager(f.getAbsolutePath());
+            manager = DatastoreManager.getInstance(f.getAbsolutePath());
         } finally {
             f.delete();
         }
@@ -75,7 +75,7 @@ public class DatastoreManagerTest {
     public void createDirectoryIfMissing(){
         File f = new File(TEST_PATH, "missing_test");
         try {
-            manager = new DatastoreManager(f.getAbsolutePath());
+            manager = DatastoreManager.getInstance(f.getAbsolutePath());
         } finally {
             f.delete();
         }
