@@ -264,4 +264,16 @@ public class DatastoreManagerTest {
         Datastore ds2 = manager.openDatastore("ds1");
         Assert.assertNotSame("The Datastore instances should not be the same.", ds1, ds2);
     }
+
+    @Test
+    public void assertFactoryReturnsSameInstanceString() throws Exception {
+        DatastoreManager manager2 = DatastoreManager.getInstance(manager.getPath());
+        Assert.assertSame("The DatastoreManager instances should be the same.", manager, manager2);
+    }
+
+    @Test
+    public void assertFactoryReturnsSameInstanceFile() throws Exception {
+        DatastoreManager manager2 = DatastoreManager.getInstance(new File(manager.getPath()));
+        Assert.assertSame("The DatastoreManager instances should be the same.", manager, manager2);
+    }
 }
