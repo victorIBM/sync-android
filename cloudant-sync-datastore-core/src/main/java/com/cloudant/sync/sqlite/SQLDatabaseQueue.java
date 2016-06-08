@@ -143,21 +143,22 @@ public class SQLDatabaseQueue {
      * tasks
      */
     public void shutdown() {
-        acceptTasks = false;
-        //pass straight to queue, tasks passed via submitTaskToQueue will now be blocked.
-        queue.submit(new Runnable() {
-            @Override
-            public void run() {
-                db.close();
+        if (!isShutdown()) {
+            acceptTasks = false;
+            //pass straight to queue, tasks passed via submitTaskToQueue will now be blocked.
+            queue.submit(new Runnable() {
+                @Override
+                public void run() {
+                    db.close();
+                }
+            });
+            queue.shutdown();
+            try {
+                queue.awaitTermination(5, TimeUnit.MINUTES);
+            } catch (InterruptedException e) {
+                logger.log(Level.SEVERE, "Interrupted while waiting for queue to terminate", e);
             }
-        });
-        queue.shutdown();
-        try {
-            queue.awaitTermination(5,TimeUnit.MINUTES);
-        } catch (InterruptedException e) {
-            logger.log(Level.SEVERE,"Interrupted while waiting for queue to terminate",e);
         }
-
     }
 
     /**
