@@ -1,3 +1,9 @@
+# Unreleased
+- [IMPROVED] `IndexManager` method calls queued for execution could potentially execute after the
+  underlying `Datastore` was closed resulting in an `IllegalStateException`. Now an `IndexManager`
+  is closed automatically after finishing any existing work if its `Datastore`  is closed. Attempts
+  to use a closed `IndexManager` continue to result in  a `RejectedExecutionException` being thrown.
+
 # 1.0.0 (2016-05-03)
 - [NOTE] This library follows the
   [Semantic Versioning 2.0.0 specification](http://semver.org). To
