@@ -17,6 +17,8 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.cloudant.sync.datastore.DocumentBodyFactory;
 import com.cloudant.sync.datastore.DocumentRevision;
@@ -26,6 +28,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.RejectedExecutionException;
 
 public class IndexManagerTest extends AbstractIndexTestBase {
 
@@ -179,4 +182,21 @@ public class IndexManagerTest extends AbstractIndexTestBase {
         assertThat(im.isTextSearchEnabled(), is(true));
     }
 
+    @Test
+    public void indexManagerClosedByDatastoreClose() throws Exception {
+        ds.close();
+        assertTrue("The IndexManager should have closed when the Datastore was closed.", im
+                .getQueue().isShutdown());
+    }
+
+    @Test
+    public void indexManagerRejectsWorkAfterDatastoreClose() throws Exception {
+        try {
+            ds.close();
+            im.listIndexes();
+            fail("The IndexManager should reject work after the Datastore is closed.");
+        } catch (RejectedExecutionException e) {
+            // This is expected
+        }
+    }
 }
