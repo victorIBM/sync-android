@@ -70,6 +70,13 @@ public class DatastoreManager {
     /* This map should only be accessed inside synchronized(openDatastores) blocks */
     private final Map<String, Datastore> openedDatastores = new HashMap<String, Datastore>();
 
+    // If the DatastoreManager was created from one of the deprecated public constructors there
+    // could be multiple managers for the same storage location. To prevent this we can delegate
+    // calls to an instance obtained from getInstance instead of having a second DatastoreManager
+    // for the storage location. Whilst this means two instances still exist all the calls are
+    // routed through the appropriate instance. This is null on the non-deprecated path.
+    private final DatastoreManager targetManager;
+
     /**
      * The regex used to validate a datastore name, {@value}.
      */
@@ -108,18 +115,35 @@ public class DatastoreManager {
      * DatastoreManager instance is created per storage path.
      */
     public DatastoreManager(File directoryPath) {
-        logger.fine("Datastore path: " + directoryPath);
+        // Call the private constructor with a target instance obtained from getInstance.
+        this(directoryPath, DatastoreManager.getInstance(directoryPath));
+    }
 
-        if(!directoryPath.exists()){
-            directoryPath.mkdir();
-        }
+    /**
+     *
+     * @param directoryPath the storage location
+     * @param targetManager null normally, instances created using the public constructors set a
+     *                      target to prevent duplicate DatastoreManager instances actually
+     *                      managing the same storage location.
+     */
+    private DatastoreManager(File directoryPath, DatastoreManager targetManager) {
+        this.targetManager = targetManager;
+        if (targetManager == null) {
+            logger.fine("Datastore path: " + directoryPath);
 
-        if(!directoryPath.isDirectory() ) {
-            throw new IllegalArgumentException("Input path is not a valid directory");
-        } else if(!directoryPath.canWrite()) {
-            throw new IllegalArgumentException("Datastore directory is not writable");
+            if (!directoryPath.exists()) {
+                directoryPath.mkdir();
+            }
+
+            if (!directoryPath.isDirectory()) {
+                throw new IllegalArgumentException("Input path is not a valid directory");
+            } else if (!directoryPath.canWrite()) {
+                throw new IllegalArgumentException("Datastore directory is not writable");
+            }
+            this.path = directoryPath.getAbsolutePath();
+        } else {
+            this.path = targetManager.getPath();
         }
-        this.path = directoryPath.getAbsolutePath();
     }
 
     /**
@@ -153,8 +177,7 @@ public class DatastoreManager {
      *                                  directory or isn't writable.
      */
     public static DatastoreManager getInstance(File directoryPath) {
-        // Uses the deprecated public constructor until we can change it to a private constructor.
-        DatastoreManager manager = new DatastoreManager(directoryPath);
+        DatastoreManager manager = new DatastoreManager(directoryPath, null);
         DatastoreManager existingManager = datastoreManagers.putIfAbsent(directoryPath, manager);
         return (existingManager == null) ? manager : existingManager;
     }
@@ -165,17 +188,21 @@ public class DatastoreManager {
      * @return List of {@link com.cloudant.sync.datastore.Datastore Datastores} names.
      */
     public List<String> listAllDatastores() {
-        List<String> datastores = new ArrayList<String>();
-        File dsManagerDir = new File(this.path);
-        for(File file:dsManagerDir.listFiles()){
-            boolean isStore = file.isDirectory() && new File(file, "db.sync").isFile();
-            if (isStore) {
-                //replace . with a slash, on disk / are replaced with dots
-                datastores.add(file.getName().replace(".", "/"));
+        if (targetManager == null) {
+            List<String> datastores = new ArrayList<String>();
+            File dsManagerDir = new File(this.path);
+            for (File file : dsManagerDir.listFiles()) {
+                boolean isStore = file.isDirectory() && new File(file, "db.sync").isFile();
+                if (isStore) {
+                    //replace . with a slash, on disk / are replaced with dots
+                    datastores.add(file.getName().replace(".", "/"));
+                }
             }
-        }
 
-        return datastores;
+            return datastores;
+        } else {
+            return targetManager.listAllDatastores();
+        }
     }
 
     /**
@@ -231,18 +258,22 @@ public class DatastoreManager {
      */
     public Datastore openDatastore(String dbName, KeyProvider provider) throws
             DatastoreNotCreatedException {
-        Preconditions.checkArgument(dbName.matches(LEGAL_CHARACTERS),
-                "A database must be named with all lowercase letters (a-z), digits (0-9),"
-                        + " or any of the _$()+-/ characters. The name has to start with a"
-                        + " lowercase letter (a-z).");
-        synchronized (openedDatastores) {
-            Datastore ds = openedDatastores.get(dbName);
-            if (ds == null) {
-                ds = createDatastore(dbName, provider);
-                ds.getEventBus().register(this);
-                openedDatastores.put(dbName, ds);
+        if (targetManager == null) {
+            Preconditions.checkArgument(dbName.matches(LEGAL_CHARACTERS),
+                    "A database must be named with all lowercase letters (a-z), digits (0-9),"
+                            + " or any of the _$()+-/ characters. The name has to start with a"
+                            + " lowercase letter (a-z).");
+            synchronized (openedDatastores) {
+                Datastore ds = openedDatastores.get(dbName);
+                if (ds == null) {
+                    ds = createDatastore(dbName, provider);
+                    ds.getEventBus().register(this);
+                    openedDatastores.put(dbName, ds);
+                }
+                return ds;
             }
-            return ds;
+        } else {
+            return targetManager.openDatastore(dbName, provider);
         }
     }
 
@@ -270,24 +301,28 @@ public class DatastoreManager {
      * @see DatastoreManager#getEventBus() 
      */
     public void deleteDatastore(String dbName) throws IOException {
-        Preconditions.checkNotNull(dbName, "Datastore name must not be null");
+        if (targetManager == null) {
+            Preconditions.checkNotNull(dbName, "Datastore name must not be null");
 
-        synchronized (openedDatastores) {
-            Datastore ds = openedDatastores.remove(dbName);
-            if (ds != null) {
-                ds.close();
+            synchronized (openedDatastores) {
+                Datastore ds = openedDatastores.remove(dbName);
+                if (ds != null) {
+                    ds.close();
+                }
+                String dbDirectory = getDatastoreDirectory(dbName);
+                File dir = new File(dbDirectory);
+                if (!dir.exists()) {
+                    String msg = String.format(
+                            "Datastore %s doesn't exist on disk", dbName
+                    );
+                    throw new IOException(msg);
+                } else {
+                    FileUtils.deleteDirectory(dir);
+                    eventBus.post(new DatabaseDeleted(dbName));
+                }
             }
-            String dbDirectory = getDatastoreDirectory(dbName);
-            File dir = new File(dbDirectory);
-            if (!dir.exists()) {
-                String msg = String.format(
-                        "Datastore %s doesn't exist on disk", dbName
-                        );
-                throw new IOException(msg);
-            } else {
-                FileUtils.deleteDirectory(dir);
-                eventBus.post(new DatabaseDeleted(dbName));
-            }
+        } else {
+            targetManager.deleteDatastore(dbName);
         }
     }
 
@@ -340,7 +375,11 @@ public class DatastoreManager {
      * @see <a href="https://code.google.com/p/guava-libraries/wiki/EventBusExplained">Google Guava EventBus documentation</a>
      */
     public EventBus getEventBus() {
-        return eventBus;
+        if (targetManager == null) {
+            return eventBus;
+        } else {
+            return targetManager.getEventBus();
+        }
     }
 
     @Subscribe

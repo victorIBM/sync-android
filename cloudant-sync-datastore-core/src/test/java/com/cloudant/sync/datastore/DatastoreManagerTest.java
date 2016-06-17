@@ -288,4 +288,12 @@ public class DatastoreManagerTest {
             }
         }.run();
     }
+
+    @Test
+    public void testConstructedDatastoreManagerGetsSameDatastore() throws Exception {
+        DatastoreManager constructedManager = new DatastoreManager(manager.getPath());
+        Datastore ds1 = manager.openDatastore("ds1");
+        Datastore ds1FromConstructor = constructedManager.openDatastore("ds1");
+        Assert.assertSame("The datastore instances should be the same", ds1, ds1FromConstructor);
+    }
 }
