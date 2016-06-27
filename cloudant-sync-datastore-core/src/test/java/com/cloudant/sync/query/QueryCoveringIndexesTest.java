@@ -26,6 +26,7 @@ import com.cloudant.sync.datastore.DocumentRevision;
 import com.cloudant.sync.util.SQLDatabaseTestUtils;
 import com.cloudant.sync.util.TestUtils;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -1681,5 +1682,23 @@ public class QueryCoveringIndexesTest extends AbstractQueryTestBase {
                                                                  "john0.6",
                                                                  "john-0.6"));
     }
-    
+
+    /**
+     * Test that querying a boolean indexed field works.
+     * Added test for https://github.com/cloudant/sync-android/issues/273.
+     */
+    @Test
+    public void canQueryOverOneBooleanField() {
+        // query - { "petless" : true }
+        Map<String, Object> query = new HashMap<String, Object>();
+        query.put("petless", true);
+        QueryResult queryResult = im.find(query, 0, Long.MAX_VALUE, Arrays.asList("name"), null);
+        Assert.assertNotNull("The result should not be null", queryResult);
+        assertThat("There should be one result", queryResult.size() == 1);
+        for (DocumentRevision rev : queryResult) {
+            Map<String, Object> revBody = rev.getBody().asMap();
+            assertThat(revBody.keySet(), contains("name"));
+            assertThat("The name should be fred12", revBody.get("name").equals("fred12"));
+        }
+    }
 }

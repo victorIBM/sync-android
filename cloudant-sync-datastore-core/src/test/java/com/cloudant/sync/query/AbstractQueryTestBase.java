@@ -123,12 +123,14 @@ public abstract class AbstractQueryTestBase {
         bodyMap.clear();
         bodyMap.put("name", "fred");
         bodyMap.put("age", 12);
+        bodyMap.put("petless", true);
         rev.setBody(DocumentBodyFactory.create(bodyMap));
         ds.createDocumentFromRevision(rev);
 
 
         assertThat(im.ensureIndexed(Arrays.<Object>asList("name", "age"), "basic"), is("basic"));
         assertThat(im.ensureIndexed(Arrays.<Object>asList("name", "pet"), "pet"), is("pet"));
+        assertThat(im.ensureIndexed(Collections.<Object>singletonList("petless"), "petless"), is("petless"));
     }
 
     // Used to setup document data testing:
